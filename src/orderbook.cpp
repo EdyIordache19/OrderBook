@@ -1,11 +1,14 @@
 #include "orderbook.hpp"
 
 void OrderBook::addOrder(const Order& order) {
+    Order* orderPtr = ordersPool.allocateOrder();
+    *orderPtr = order;
+
     if (order.orderType == Order::BUY) {
-        bidOrders[order.price].push_back(order);
+        bidOrders[order.price].push_back(orderPtr);
         orderLookup[order.id] = --bidOrders[order.price].end();
     } else {
-        askOrders[order.price].push_back(order);
+        askOrders[order.price].push_back(orderPtr);
         orderLookup[order.id] = --askOrders[order.price].end();
     }
 }
@@ -19,25 +22,25 @@ void OrderBook::removeOrder(uint64_t orderId) {
     }
 
     // Retrieve the order details
-    Order orderToRemove = *(lookupIt->second);
-    if (orderToRemove.orderType == Order::BUY) {
+    Order* orderToRemovePtr = *(lookupIt->second);
+    if (orderToRemovePtr->orderType == Order::BUY) {
         // Remove from bidOrders
-        auto& orders = bidOrders[orderToRemove.price];
+        auto& orders = bidOrders[orderToRemovePtr->price];
         orders.erase(lookupIt->second);
         if (orders.empty()) {
             // If no more orders at this price, remove the price level
-            bidOrders.erase(orderToRemove.price);
+            bidOrders.erase(orderToRemovePtr->price);
         }
 
         // Remove from lookup map
         orderLookup.erase(lookupIt);
     } else {
         // Remove from askOrders
-        auto& orders = askOrders[orderToRemove.price];
+        auto& orders = askOrders[orderToRemovePtr->price];
         orders.erase(lookupIt->second);
         if (orders.empty()) {
             // If no more orders at this price, remove the price level
-            askOrders.erase(orderToRemove.price);
+            askOrders.erase(orderToRemovePtr->price);
         }
 
         // Remove from lookup map
@@ -49,7 +52,7 @@ void OrderBook::printOrders() {
     std::cout << "Sell Orders:\n";
     for (const auto& [price, orders] : askOrders) {
         for (const auto& order : orders) {
-            std::cout << "ID: " << order.id << ", Price: " << order.price << ", Quantity: " << order.quantity << "\n";
+            std::cout << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
         }
     }
 
@@ -58,7 +61,7 @@ void OrderBook::printOrders() {
     std::cout << "Buy Orders:\n";
     for (const auto& [price, orders] : bidOrders) {
         for (const auto& order : orders) {
-            std::cout << "ID: " << order.id << ", Price: " << order.price << ", Quantity: " << order.quantity << "\n";
+            std::cout << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
         }
     }
 }
@@ -76,22 +79,22 @@ std::list<Trade> OrderBook::matchOrders() {
             auto& bidOrder = bidList.front();
             auto& askOrder = askList.front();
 
-            uint32_t tradeQuantity = std::min(bidOrder.quantity, askOrder.quantity);
+            uint32_t tradeQuantity = std::min(bidOrder->quantity, askOrder->quantity);
 
-            bidOrder.quantity -= tradeQuantity;
-            askOrder.quantity -= tradeQuantity;
+            bidOrder->quantity -= tradeQuantity;
+            askOrder->quantity -= tradeQuantity;
 
             Trade trade = {lowestAskIt->first, tradeQuantity};
             trades.push_back(trade);
 
-            if (bidOrder.quantity == 0) {
+            if (bidOrder->quantity == 0) {
                 bidList.pop_front();
                 if (bidList.empty()) {
                     bidOrders.erase(highestBidIt);
                 }
             }
 
-            if (askOrder.quantity == 0) {
+            if (askOrder->quantity == 0) {
                 askList.pop_front();
                 if (askList.empty()) {
                     askOrders.erase(lowestAskIt);
