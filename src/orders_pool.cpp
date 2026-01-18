@@ -1,5 +1,7 @@
 #include "orders_pool.hpp"
 
+#include <stdexcept>
+
 OrdersPool::OrdersPool(size_t poolSize) {
     ordersPool.resize(poolSize);
     freeSlots.reserve(poolSize);
