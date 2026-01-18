@@ -1,0 +1,24 @@
+#include "orders_pool.hpp"
+
+OrdersPool::OrdersPool(size_t poolSize) {
+    ordersPool.resize(poolSize);
+    freeSlots.reserve(poolSize);
+
+    for (size_t i = 0; i < poolSize; i++) {
+        freeSlots.push_back(&ordersPool[i]);
+    }
+}
+
+Order* OrdersPool::allocateOrder() {
+    if (!freeSlots.empty()) {
+        Order* orderPtr = freeSlots.back();
+        freeSlots.pop_back();
+        return orderPtr;
+    } else {
+        throw std::runtime_error("No free slots available in OrdersPool");
+    }
+}
+
+void OrdersPool::deallocateOrder(Order *orderPtr) {
+    freeSlots.push_back(orderPtr);
+}
