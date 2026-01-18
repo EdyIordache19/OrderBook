@@ -14,7 +14,7 @@
 
 class OrderBook {
 private:
-    OrdersPool ordersPool{100000};
+    OrdersPool ordersPool{10000000};
 
     std::map<uint64_t, std::list<Order*>, std::greater<uint64_t>> bidOrders;
     std::map<uint64_t, std::list<Order*>> askOrders;
