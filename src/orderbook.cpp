@@ -23,6 +23,8 @@ void OrderBook::removeOrder(uint64_t orderId) {
 
     // Retrieve the order details
     Order* orderToRemovePtr = *(lookupIt->second);
+
+    ordersPool.deallocateOrder(orderToRemovePtr);
     if (orderToRemovePtr->orderType == Order::BUY) {
         // Remove from bidOrders
         auto& orders = bidOrders[orderToRemovePtr->price];
@@ -48,20 +50,22 @@ void OrderBook::removeOrder(uint64_t orderId) {
     }
 }
 
-void OrderBook::printOrders() {
-    std::cout << "Sell Orders:\n";
+void OrderBook::printOrders(char *filename) {
+    std::ofstream outFile(filename);
+
+    outFile << "Sell Orders:\n";
     for (const auto& [price, orders] : askOrders) {
         for (const auto& order : orders) {
-            std::cout << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
         }
     }
 
-    std::cout << "-------------------------------------------------\n";
+    outFile << "----------------------------------\n";
 
-    std::cout << "Buy Orders:\n";
+    outFile << "Buy Orders:\n";
     for (const auto& [price, orders] : bidOrders) {
         for (const auto& order : orders) {
-            std::cout << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
         }
     }
 }
@@ -88,6 +92,7 @@ std::list<Trade> OrderBook::matchOrders() {
             trades.push_back(trade);
 
             if (bidOrder->quantity == 0) {
+                ordersPool.deallocateOrder(bidOrder);
                 bidList.pop_front();
                 if (bidList.empty()) {
                     bidOrders.erase(highestBidIt);
@@ -95,6 +100,7 @@ std::list<Trade> OrderBook::matchOrders() {
             }
 
             if (askOrder->quantity == 0) {
+                ordersPool.deallocateOrder(askOrder);
                 askList.pop_front();
                 if (askList.empty()) {
                     askOrders.erase(lowestAskIt);
@@ -102,7 +108,6 @@ std::list<Trade> OrderBook::matchOrders() {
             }
         } else {
             std::cout << "No more matches possible. Printing current order book:\n";
-            printOrders();
             break;
         }
     }

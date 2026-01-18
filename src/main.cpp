@@ -5,6 +5,10 @@
 int main(int argc, char* argv[]) {
     OrderBook orderBook;
 
+    if (argc < 3) {
+        std::cout << "You need to parse 2 files\n";
+    }
+
     // Generate random orders and write to file
     std::string ordersFile = argv[1];
 
@@ -16,16 +20,16 @@ int main(int argc, char* argv[]) {
     }
 
     // Print current orders
-    orderBook.printOrders();
+    orderBook.printOrders(argv[2]);
 
     // Match orders
-    std::cout << "Matching orders...\n";
-    std::list<Trade> trades = orderBook.matchOrders();
-    for (const auto& trade : trades) {
-        std::cout << "Trade executed: " << trade.quantity << " units at price " << trade.price << "\n";
-    }
+    // std::cout << "Matching orders...\n";
+    // std::list<Trade> trades = orderBook.matchOrders();
+    // for (const auto& trade : trades) {
+    //     std::cout << "Trade executed: " << trade.quantity << " units at price " << trade.price << "\n";
+    // }
 
     // Print remaining orders
-    orderBook.printOrders();
+    // orderBook.printOrders();
     return 0;
 }
