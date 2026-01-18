@@ -7,10 +7,11 @@
 #include <thread>
 
 void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running) {
-    while (running.load(std::memory_order_acquire)) {
+    while (running.load(std::memory_order_acquire) || !buffer.is_empty()) {
         Order order;
         if (!buffer.pop(order)) {
             orderBook.addOrder(order);
+            orderBook.matchOrders();
         } else {
             std::this_thread::yield();
         }
@@ -37,14 +38,16 @@ int main(int argc, char* argv[]) {
 
     // Add orders to the order book
     for (const auto& order : orders) {
-        buffer.push(order);
+        while (buffer.push(order) != 0) {
+            std::this_thread::yield();
+        }
     }
-
-    // Print current orders
-    orderBook.printOrders(argv[2]);
 
     running.store(false, std::memory_order_release);
     engine_thread.join();
+
+    // Print current orders
+    orderBook.printOrders(argv[2]);
 
     // Match orders
     // std::cout << "Matching orders...\n";

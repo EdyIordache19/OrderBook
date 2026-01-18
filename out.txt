@@ -1,5 +1,5 @@
 Sell Orders:
-ID: 1, Price: 91, Quantity: 87
+ID: 1, Price: 91, Quantity: 15
 ID: 3, Price: 100, Quantity: 93
 ID: 4, Price: 100, Quantity: 63
 ID: 10, Price: 103, Quantity: 68
@@ -9,5 +9,3 @@ ID: 2, Price: 109, Quantity: 94
 ID: 5, Price: 110, Quantity: 60
 ----------------------------------
 Buy Orders:
-ID: 6, Price: 97, Quantity: 41
-ID: 9, Price: 92, Quantity: 31
