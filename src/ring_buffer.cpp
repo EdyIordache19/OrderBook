@@ -10,7 +10,7 @@ RingBuffer::RingBuffer(size_t buff_size) {
 }
 
 int RingBuffer::push(const Order& order) {
-    if (tail - head >= buff_size) {
+    if (tail - head.load(std::memory_order_acquire) >= buff_size) {
         // std::cout << "BUFFER IS FULL, CAN'T WRITE\n";
         return 1;
     }
@@ -18,12 +18,12 @@ int RingBuffer::push(const Order& order) {
     std::atomic<size_t> slot = tail & (buff_size - 1);
     buffer[slot] = order;
 
-    tail++;
+    tail.store(tail + 1, std::memory_order_release);
     return 0;
 }
 
 int RingBuffer::pop(Order& order) {
-    if (tail == head) {
+    if (tail.load(std::memory_order_acquire) == head) {
         // std::cout << "BUFFER IS EMPTY, CAN'T READ\n";
         return 1;
     }
@@ -31,7 +31,7 @@ int RingBuffer::pop(Order& order) {
     std::atomic<size_t> slot = head & (buff_size - 1);
     order = buffer[slot];
 
-    head++;
+    head.store(head + 1, std::memory_order_release);
     return 0;
 }
 

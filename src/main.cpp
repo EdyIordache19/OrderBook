@@ -3,7 +3,7 @@
 #include "orders_generator.hpp"
 #include "ring_buffer.hpp"
 
-#define NUM_ORDERS 10000000
+#define NUM_ORDERS 100000
 
 void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running, std::vector<uint64_t>& latencies) {
     latencies.reserve(NUM_ORDERS);
@@ -24,7 +24,7 @@ void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running
 
 int main(int argc, char* argv[]) {
     OrderBook orderBook;
-    RingBuffer buffer(2048);
+    RingBuffer buffer(128);
     std::vector<uint64_t> latencies;
 
     std::atomic<bool> running = true;
@@ -55,8 +55,8 @@ int main(int argc, char* argv[]) {
          * Wait as in a real-life scenario
          * If no wait, the throughput is bigger, but the buffer gets flooded and the latency is very high
          */
-        // auto start_wait = std::chrono::high_resolution_clock::now();
-        // while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(500));
+        auto start_wait = std::chrono::high_resolution_clock::now();
+        while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(500));
     }
 
     running.store(false, std::memory_order_release);

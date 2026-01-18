@@ -8,8 +8,8 @@
 class RingBuffer {
 private:
     std::vector<Order> buffer;
-    std::atomic<size_t> head;
-    std::atomic<size_t> tail;
+    alignas(64) std::atomic<size_t> head;
+    alignas(64) std::atomic<size_t> tail;
     size_t buff_size;
 public:
     RingBuffer(size_t buff_size);
