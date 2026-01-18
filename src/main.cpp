@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
          * If no wait, the throughput is bigger, but the buffer gets flooded and the latency is very high
          */
         auto start_wait = std::chrono::high_resolution_clock::now();
-        while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(500));
+        while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(250));
     }
 
     running.store(false, std::memory_order_release);
@@ -79,9 +79,9 @@ int main(int argc, char* argv[]) {
     double p99 = latencies[NUM_ORDERS * 0.99];
     double p99_9 = latencies[NUM_ORDERS * 0.999];
 
-    std::cout << "Median Latency: " << median << " ns\n";
-    std::cout << "99th% Latency:  " << p99 << " ns\n";
-    std::cout << "99.9th% Latency:" << p99_9 << " ns\n";
+    std::cout << "Median Latency:  " << median << " ns\n";
+    std::cout << "99% Latency:     " << p99 << " ns\n";
+    std::cout << "99.9% Latency:   " << p99_9 << " ns\n";
 
     return 0;
 }

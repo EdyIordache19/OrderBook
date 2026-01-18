@@ -16,14 +16,17 @@ class OrderBook {
 private:
     OrdersPool ordersPool{10000000};
 
-    std::map<uint64_t, std::list<Order*>, std::greater<uint64_t>> bidOrders;
-    std::map<uint64_t, std::list<Order*>> askOrders;
+    std::vector<Level> askOrders;
+    std::vector<Level> bidOrders;
 
-    //  Lookup map, stores orderId for faster order removal
-    std::map<uint64_t, std::list<Order*>::iterator> orderLookup;
+    std::vector<Order*> orderLookup;
+
+    uint64_t maxBid = 0;
+    uint64_t minAsk = 9999999;
 public:
+    OrderBook();
     void addOrder(const Order& order);
     void removeOrder(uint64_t orderId);
     void printOrders(char *filename);
-    std::vector<Trade> matchOrders();
+    void matchOrders();
 };

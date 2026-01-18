@@ -1,115 +1,137 @@
 #include "orderbook.hpp"
 
+OrderBook::OrderBook() {
+    bidOrders.resize(100000);
+    askOrders.resize(100000);
+
+    orderLookup.resize(100000);
+}
+
 void OrderBook::addOrder(const Order& order) {
     Order* orderPtr = ordersPool.allocateOrder();
     *orderPtr = order;
+    orderPtr->next = nullptr;
+    orderPtr->prev = nullptr;
+
+    if (orderPtr->id >= orderLookup.size()) {
+        orderLookup.resize(orderPtr->id * 2);
+    }
+
+    orderLookup[orderPtr->id] = orderPtr;
+
+    std::vector<Level>& book = orderPtr->orderType == Order::BUY ? bidOrders : askOrders;
+
+    Level& level = book[orderPtr->price];
+    if (level.head == nullptr) {
+        level.head = orderPtr;
+        level.tail = orderPtr;
+    } else {
+        // Add to the end of the list
+        level.tail->next = orderPtr;
+        orderPtr->prev = level.tail;
+        level.tail = orderPtr;
+    }
 
     if (order.orderType == Order::BUY) {
-        bidOrders[order.price].push_back(orderPtr);
-        orderLookup[order.id] = --bidOrders[order.price].end();
+        if (order.price > maxBid) maxBid = order.price;
     } else {
-        askOrders[order.price].push_back(orderPtr);
-        orderLookup[order.id] = --askOrders[order.price].end();
+        if (order.price < minAsk) minAsk = order.price;
     }
+
 }
 
 void OrderBook::removeOrder(uint64_t orderId) {
-    // Iterator to find the order in the lookup map
-    auto lookupIt = orderLookup.find(orderId);
-    if (lookupIt == orderLookup.end()) {
-        // Order ID not found
+    if (orderId >= orderLookup.size() || !orderLookup[orderId]) {
         return;
     }
 
-    // Retrieve the order details
-    Order* orderToRemovePtr = *(lookupIt->second);
+    Order* orderToRemove = orderLookup[orderId];
+    std::vector<Level>& book = orderToRemove->orderType == Order::BUY ? bidOrders : askOrders;
 
-    ordersPool.deallocateOrder(orderToRemovePtr);
-    if (orderToRemovePtr->orderType == Order::BUY) {
-        // Remove from bidOrders
-        auto& orders = bidOrders[orderToRemovePtr->price];
-        orders.erase(lookupIt->second);
-        if (orders.empty()) {
-            // If no more orders at this price, remove the price level
-            bidOrders.erase(orderToRemovePtr->price);
-        }
-
-        // Remove from lookup map
-        orderLookup.erase(lookupIt);
+    if (orderToRemove->prev) {
+        orderToRemove->prev->next = orderToRemove->next;
     } else {
-        // Remove from askOrders
-        auto& orders = askOrders[orderToRemovePtr->price];
-        orders.erase(lookupIt->second);
-        if (orders.empty()) {
-            // If no more orders at this price, remove the price level
-            askOrders.erase(orderToRemovePtr->price);
-        }
-
-        // Remove from lookup map
-        orderLookup.erase(lookupIt);
+        // It's the head (highest priority)
+        book[orderToRemove->price].head = orderToRemove->next;
     }
+
+    if (orderToRemove->next) {
+        orderToRemove->next->prev = orderToRemove->prev;
+    } else {
+        // It's the tail (lowest priority)
+        book[orderToRemove->price].tail = orderToRemove->prev;
+    }
+
+    orderLookup[orderId] = nullptr;
+    ordersPool.deallocateOrder(orderToRemove);
 }
 
 void OrderBook::printOrders(char *filename) {
     std::ofstream outFile(filename);
 
     outFile << "Sell Orders:\n";
-    for (const auto& [price, orders] : askOrders) {
-        for (const auto& order : orders) {
+
+    for (Level level : askOrders) {
+        Order* order = level.head;
+        while (order) {
             outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            order = order->next;
         }
     }
 
     outFile << "----------------------------------\n";
 
     outFile << "Buy Orders:\n";
-    for (const auto& [price, orders] : bidOrders) {
-        for (const auto& order : orders) {
+    for (Level level : bidOrders) {
+        Order* order = level.head;
+        while (order) {
             outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            order = order->next;
         }
     }
 }
 
-std::vector<Trade> OrderBook::matchOrders() {
-    std::vector<Trade> trades;
-    trades.reserve(10);
-    while (!bidOrders.empty() && !askOrders.empty()) {
-        auto highestBidIt = bidOrders.begin();
-        auto lowestAskIt = askOrders.begin();
+void OrderBook::matchOrders() {
+    while (maxBid >= minAsk) {
+        Level& bidLevel = bidOrders[maxBid];
+        Level& askLevel = askOrders[minAsk];
 
-        if (highestBidIt->first >= lowestAskIt->first) {
-            auto& bidList = highestBidIt->second;
-            auto& askList = lowestAskIt->second;
+        if (!bidLevel.head) {
+            if (maxBid == 0) {
+                break;
+            }
 
-            auto& bidOrder = bidList.front();
-            auto& askOrder = askList.front();
+            maxBid--;
+            continue;
+        }
 
+        if (!askLevel.head) {
+            if (minAsk >= askOrders.size()) {
+                break;
+            }
+
+            minAsk++;
+            continue;
+        }
+
+        Order *bidOrder = bidLevel.head;
+        Order *askOrder = askLevel.head;
+
+        if (bidOrder->price >= askOrder->price) {
             uint32_t tradeQuantity = std::min(bidOrder->quantity, askOrder->quantity);
 
-            bidOrder->quantity -= tradeQuantity;
             askOrder->quantity -= tradeQuantity;
-
-            Trade trade = {lowestAskIt->first, tradeQuantity};
-            trades.push_back(trade);
+            bidOrder->quantity -= tradeQuantity;
 
             if (bidOrder->quantity == 0) {
-                ordersPool.deallocateOrder(bidOrder);
-                bidList.pop_front();
-                if (bidList.empty()) {
-                    bidOrders.erase(highestBidIt);
-                }
+                removeOrder(bidOrder->id);
             }
 
             if (askOrder->quantity == 0) {
-                ordersPool.deallocateOrder(askOrder);
-                askList.pop_front();
-                if (askList.empty()) {
-                    askOrders.erase(lowestAskIt);
-                }
+                removeOrder(askOrder->id);
             }
         } else {
             break;
         }
     }
-    return trades;
 }
