@@ -1,23 +1,28 @@
 CXX      := g++
-CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -pedantic
+CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -pedantic -Iinclude -MMD -MP
 LDFLAGS  :=
-TARGET   := orderbook
-SRC      := main.cpp
-SRC      := main.cpp orderbook.cpp orders_generator.cpp orders_pool.cpp
-CXXFLAGS += -MMD -MP
+
+SRCDIR   := src
+BINDIR   := bin
+TARGET   := $(BINDIR)/orderbook
+
+SRC      := $(wildcard $(SRCDIR)/*.cpp)
+OBJ      := $(patsubst $(SRCDIR)/%.cpp,$(BINDIR)/%.o,$(SRC))
 DEP      := $(OBJ:.o=.d)
--include $(DEP)
-OBJ      := $(SRC:.cpp=.o)
 
 .PHONY: build clean
-
 build: $(TARGET)
 
-$(TARGET): $(OBJ)
-	$(CXX) $(LDFLAGS) -o $@ $^
+$(TARGET): $(OBJ) | $(BINDIR)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJ)
 
-%.o: %.cpp
+$(BINDIR)/%.o: $(SRCDIR)/%.cpp | $(BINDIR)
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+$(BINDIR):
+	mkdir -p $(BINDIR)
+
+-include $(DEP)
+
 clean:
-	rm -f $(OBJ) $(TARGET)
+	rm -f $(BINDIR)/*.o $(BINDIR)/*.d $(TARGET)
