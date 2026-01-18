@@ -11,10 +11,11 @@
 #include <map>
 #include <list>
 
+#define NUM_ORDERS 1000000
 
 class OrderBook {
 private:
-    OrdersPool ordersPool{10000000};
+    OrdersPool ordersPool{NUM_ORDERS};
 
     std::vector<Level> askOrders;
     std::vector<Level> bidOrders;

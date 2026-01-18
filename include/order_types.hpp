@@ -7,7 +7,7 @@ struct Trade {
     uint32_t quantity;
 };
 
-struct Order {
+struct alignas(64) Order {
     uint64_t id;
     uint64_t price;
     uint32_t quantity;

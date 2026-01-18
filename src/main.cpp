@@ -3,7 +3,6 @@
 #include "orders_generator.hpp"
 #include "ring_buffer.hpp"
 
-#define NUM_ORDERS 100000
 
 void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running, std::vector<uint64_t>& latencies) {
     latencies.reserve(NUM_ORDERS);

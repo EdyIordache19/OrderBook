@@ -1,5 +1,5 @@
 CXX      := g++
-CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -pedantic -Iinclude -MMD -MP
+CXXFLAGS := -std=c++17 -O3 -march=native -funroll-loops -Wall -Wextra -pedantic -Iinclude -MMD -MP
 LDFLAGS  :=
 
 SRCDIR   := src

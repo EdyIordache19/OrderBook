@@ -1,10 +1,10 @@
 #include "orderbook.hpp"
 
 OrderBook::OrderBook() {
-    bidOrders.resize(100000);
-    askOrders.resize(100000);
+    bidOrders.resize(NUM_ORDERS);
+    askOrders.resize(NUM_ORDERS);
 
-    orderLookup.resize(100000);
+    orderLookup.resize(NUM_ORDERS + 1);
 }
 
 void OrderBook::addOrder(const Order& order) {
@@ -13,15 +13,11 @@ void OrderBook::addOrder(const Order& order) {
     orderPtr->next = nullptr;
     orderPtr->prev = nullptr;
 
-    if (orderPtr->id >= orderLookup.size()) {
-        orderLookup.resize(orderPtr->id * 2);
-    }
+    orderLookup[order.id] = orderPtr;
 
-    orderLookup[orderPtr->id] = orderPtr;
+    std::vector<Level>& book = order.orderType == Order::BUY ? bidOrders : askOrders;
 
-    std::vector<Level>& book = orderPtr->orderType == Order::BUY ? bidOrders : askOrders;
-
-    Level& level = book[orderPtr->price];
+    Level& level = book[order.price];
     if (level.head == nullptr) {
         level.head = orderPtr;
         level.tail = orderPtr;
@@ -33,9 +29,9 @@ void OrderBook::addOrder(const Order& order) {
     }
 
     if (order.orderType == Order::BUY) {
-        if (order.price > maxBid) maxBid = order.price;
+        maxBid = std::max(maxBid, order.price);
     } else {
-        if (order.price < minAsk) minAsk = order.price;
+        minAsk = std::min(minAsk, order.price);
     }
 
 }
@@ -113,6 +109,10 @@ void OrderBook::matchOrders() {
         Order *bidOrder = bidLevel.head;
         Order *askOrder = askLevel.head;
 
+        // Fetch next orders into L1 cache
+        __builtin_prefetch(bidOrder->next);
+        __builtin_prefetch(askOrder->next);
+
         if (bidOrder->price >= askOrder->price) {
             uint32_t tradeQuantity = std::min(bidOrder->quantity, askOrder->quantity);
 
@@ -120,11 +120,19 @@ void OrderBook::matchOrders() {
             bidOrder->quantity -= tradeQuantity;
 
             if (bidOrder->quantity == 0) {
-                removeOrder(bidOrder);
+                bidLevel.head = bidOrder->next;
+                if (bidLevel.head) bidLevel.head->prev = nullptr;
+                else bidLevel.tail = nullptr;
+
+                ordersPool.deallocateOrder(bidOrder);
             }
 
             if (askOrder->quantity == 0) {
-                removeOrder(askOrder);
+                askLevel.head = askOrder->next;
+                if (askLevel.head) askLevel.head->prev = nullptr;
+                else askLevel.tail = nullptr;
+
+                ordersPool.deallocateOrder(askOrder);
             }
         } else {
             break;
