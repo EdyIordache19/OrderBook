@@ -5,15 +5,15 @@
 #include <vector>
 #include <atomic>
 
-#define BUFF_SIZE 1024
-
 class RingBuffer {
 private:
     std::vector<Order> buffer;
     std::atomic<size_t> head;
     std::atomic<size_t> tail;
-
+    size_t buff_size;
 public:
-    void addToRing(const Order& order);
-    void removeFromRing(Order& outputOrder);
+    RingBuffer(size_t buff_size);
+    int push(const Order& order);
+    int pop(Order& outputOrder);
+    bool is_empty();
 };
