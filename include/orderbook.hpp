@@ -25,5 +25,5 @@ public:
     void addOrder(const Order& order);
     void removeOrder(uint64_t orderId);
     void printOrders(char *filename);
-    std::list<Trade> matchOrders();
+    std::vector<Trade> matchOrders();
 };

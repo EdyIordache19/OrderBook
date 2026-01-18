@@ -70,8 +70,9 @@ void OrderBook::printOrders(char *filename) {
     }
 }
 
-std::list<Trade> OrderBook::matchOrders() {
-    std::list<Trade> trades;
+std::vector<Trade> OrderBook::matchOrders() {
+    std::vector<Trade> trades;
+    trades.reserve(10);
     while (!bidOrders.empty() && !askOrders.empty()) {
         auto highestBidIt = bidOrders.begin();
         auto lowestAskIt = askOrders.begin();
@@ -107,7 +108,6 @@ std::list<Trade> OrderBook::matchOrders() {
                 }
             }
         } else {
-            std::cout << "No more matches possible. Printing current order book:\n";
             break;
         }
     }
