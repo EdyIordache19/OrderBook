@@ -66,29 +66,25 @@ void OrderBook::removeOrder(uint64_t orderId) {
     ordersPool.deallocateOrder(orderToRemove);
 }
 
-void OrderBook::printOrders(char *filename) {
-    std::ofstream outFile(filename);
+void OrderBook::removeOrder(Order *orderToRemove) {
+    std::vector<Level>& book = orderToRemove->orderType == Order::BUY ? bidOrders : askOrders;
 
-    outFile << "Sell Orders:\n";
-
-    for (Level level : askOrders) {
-        Order* order = level.head;
-        while (order) {
-            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
-            order = order->next;
-        }
+    if (orderToRemove->prev) {
+        orderToRemove->prev->next = orderToRemove->next;
+    } else {
+        // It's the head (highest priority)
+        book[orderToRemove->price].head = orderToRemove->next;
     }
 
-    outFile << "----------------------------------\n";
-
-    outFile << "Buy Orders:\n";
-    for (Level level : bidOrders) {
-        Order* order = level.head;
-        while (order) {
-            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
-            order = order->next;
-        }
+    if (orderToRemove->next) {
+        orderToRemove->next->prev = orderToRemove->prev;
+    } else {
+        // It's the tail (lowest priority)
+        book[orderToRemove->price].tail = orderToRemove->prev;
     }
+
+    orderLookup[orderToRemove->id] = nullptr;
+    ordersPool.deallocateOrder(orderToRemove);
 }
 
 void OrderBook::matchOrders() {
@@ -124,14 +120,40 @@ void OrderBook::matchOrders() {
             bidOrder->quantity -= tradeQuantity;
 
             if (bidOrder->quantity == 0) {
-                removeOrder(bidOrder->id);
+                removeOrder(bidOrder);
             }
 
             if (askOrder->quantity == 0) {
-                removeOrder(askOrder->id);
+                removeOrder(askOrder);
             }
         } else {
             break;
+        }
+    }
+}
+
+
+void OrderBook::printOrders(char *filename) {
+    std::ofstream outFile(filename);
+
+    outFile << "Sell Orders:\n";
+
+    for (Level level : askOrders) {
+        Order* order = level.head;
+        while (order) {
+            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            order = order->next;
+        }
+    }
+
+    outFile << "----------------------------------\n";
+
+    outFile << "Buy Orders:\n";
+    for (Level level : bidOrders) {
+        Order* order = level.head;
+        while (order) {
+            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            order = order->next;
         }
     }
 }

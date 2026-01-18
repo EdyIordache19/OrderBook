@@ -27,6 +27,7 @@ public:
     OrderBook();
     void addOrder(const Order& order);
     void removeOrder(uint64_t orderId);
-    void printOrders(char *filename);
+    void removeOrder(Order *orderToRemove);
     void matchOrders();
+    void printOrders(char *filename);
 };
