@@ -7,7 +7,7 @@ OrderBook::OrderBook() {
     orderLookup.resize(NUM_ORDERS + 1);
 }
 
-void OrderBook::addOrder(const Order& order) {
+void OrderBook::addOrder(Order& order) {
     Order* orderPtr = ordersPool.allocateOrder();
     *orderPtr = order;
     orderPtr->next = nullptr;
@@ -140,6 +140,85 @@ void OrderBook::matchOrders() {
     }
 }
 
+uint32_t OrderBook::processOrder(Order& incoming) {
+    while (incoming.quantity > 0) {
+        if (incoming.side == Order::BUY) {
+            if (minAsk > incoming.price || askOrders[minAsk].head == nullptr) break;
+        } else {
+            if (maxBid < incoming.price || bidOrders[maxBid].head == nullptr) break;
+        }
+
+        Level& level = (incoming.side == Order::BUY) ? askOrders[minAsk] : bidOrders[maxBid];
+        Order *order = level.head;
+
+        uint32_t tradeQuantity = std::min(incoming.quantity, order->quantity);
+
+        incoming.quantity -= tradeQuantity;
+        order->quantity -= tradeQuantity;
+
+        if (order->quantity == 0) {
+            level.head = order->next;
+            if (level.head) level.head->prev = nullptr;
+            else level.tail = nullptr;
+
+            ordersPool.deallocateOrder(order);
+        }
+    }
+
+    return incoming.quantity;
+}
+
+bool OrderBook::canFill(Order& incoming) {
+    Order incoming_copy = incoming;
+
+    uint64_t currentPrice = incoming.side == Order::BUY ? minAsk : maxBid;
+
+    Order *currentOrder = nullptr;
+    uint32_t currentQty = 0;
+
+    while (incoming_copy.quantity > 0) {
+        while (!currentOrder) {
+            if (incoming.side == Order::BUY) {
+                // If price is too big return false (whole BUY order not fulfilled)
+                if (currentPrice > incoming.price || currentPrice > askOrders.size()) return false;
+                currentOrder = askOrders[currentPrice].head;
+
+                // If current price level empty, move price up
+                if (!currentOrder) currentPrice++;
+            } else {
+                // If price is too small return false (whole SELL order not fulfilled)
+                if (currentPrice < incoming.price || currentPrice == 0) return false;
+                currentOrder = bidOrders[currentPrice].head;
+
+                // If current price level empty, move price down
+                if (!currentOrder) currentPrice--;
+            }
+        }
+
+        if (!currentOrder) return false;
+        currentQty = currentOrder->quantity;
+
+        uint32_t tradeQty = std::min(incoming_copy.quantity, currentOrder->quantity);
+        incoming_copy.quantity -= tradeQty;
+        currentQty -= tradeQty;
+
+        if (currentQty == 0) {
+            // Current trade is empty, move
+            currentOrder = currentOrder->next;
+            if (currentOrder) {
+                currentQty = currentOrder->quantity;
+            } else {
+                if (incoming.side == Order::BUY) {
+                    currentPrice++;
+                } else {
+                    currentPrice--;
+                }
+            }
+        }
+    }
+
+    return true;
+}
 
 void OrderBook::printOrders(char *filename) {
     std::ofstream outFile(filename);

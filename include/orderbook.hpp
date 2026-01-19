@@ -26,9 +26,11 @@ private:
     uint64_t minAsk = 9999999;
 public:
     OrderBook();
-    void addOrder(const Order& order);
+    void addOrder(Order& order);
     void removeOrder(uint64_t orderId);
     void removeOrder(Order *orderToRemove);
     void matchOrders();
+    uint32_t processOrder(Order& incoming);
+    bool canFill(Order& order);
     void printOrders(char *filename);
 };

@@ -10,8 +10,21 @@ void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running
     while (running.load(std::memory_order_acquire) || !buffer.is_empty()) {
         Order order;
         if (!buffer.pop(order)) {
-            orderBook.addOrder(order);
-            orderBook.matchOrders();
+            if (order.tif == TimeInForce::IOC) {
+                // Just process (match order with book) and dismiss the remainder
+                orderBook.processOrder(order);
+            } else if (order.tif == TimeInForce::FOK) {
+                // Check if it can be filled entirely and process order
+                if (orderBook.canFill(order)) {
+                    orderBook.processOrder(order);
+                }
+            } else {
+                // Process order and add remainder to book
+                uint32_t remaining_qty = orderBook.processOrder(order);
+
+                order.quantity = remaining_qty;
+                orderBook.addOrder(order);
+            }
 
             uint64_t now = std::chrono::steady_clock::now().time_since_epoch().count();
             latencies.push_back(now - order.timestamp);
