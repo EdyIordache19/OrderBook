@@ -6,8 +6,8 @@
 Order OrdersGenerator::generateRandomOrder(uint64_t id) {
     Order order;
     order.id = id;
-    order.price = 90 + rand() % 21; // Random price between 90 and 110
-    order.quantity = 1 + rand() % 100; // Random quantity between 1 and 100
+    order.price = 10 + rand() % 101; // Random price between 10 and 110
+    order.quantity = 1 + rand() % 1000; // Random quantity between 1 and 1000
     order.side = (rand() % 2 == 0) ? Order::BUY : Order::SELL;
     order.tif = static_cast<TimeInForce>(rand() % 3);
     order.type = static_cast<OrderType>(rand() % 2);

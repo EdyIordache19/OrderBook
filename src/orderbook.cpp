@@ -150,7 +150,7 @@ uint32_t OrderBook::processOrder(Order& incoming) {
             if (minAsk > incoming.price) break;
             if (askOrders[minAsk].head == nullptr) {
                 minAsk++;
-                if (minAsk > askOrders.size()) break;
+                if (minAsk >= askOrders.size()) break;
                 continue;
             }
         } else {

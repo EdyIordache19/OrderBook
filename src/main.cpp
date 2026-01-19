@@ -11,7 +11,7 @@ void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running
         Order order;
         if (!buffer.pop(order)) {
             if (order.type == OrderType::MARKET) {
-                if (order.side == Order::BUY) order.price = 10000;
+                if (order.side == Order::BUY) order.price = NUM_ORDERS - 1;
                 else order.price = 0;
 
                 order.tif = TimeInForce::IOC;
