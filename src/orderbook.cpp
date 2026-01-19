@@ -143,9 +143,19 @@ void OrderBook::matchOrders() {
 uint32_t OrderBook::processOrder(Order& incoming) {
     while (incoming.quantity > 0) {
         if (incoming.side == Order::BUY) {
-            if (minAsk > incoming.price || askOrders[minAsk].head == nullptr) break;
+            if (minAsk > incoming.price) break;
+            if (askOrders[minAsk].head == nullptr) {
+                minAsk++;
+                if (minAsk > askOrders.size()) break;
+                continue;
+            }
         } else {
-            if (maxBid < incoming.price || bidOrders[maxBid].head == nullptr) break;
+            if (maxBid < incoming.price) break;
+            if (bidOrders[maxBid].head == nullptr) {
+                if (maxBid == 0) break;
+                maxBid--;
+                continue;
+            }
         }
 
         Level& level = (incoming.side == Order::BUY) ? askOrders[minAsk] : bidOrders[maxBid];
@@ -161,6 +171,7 @@ uint32_t OrderBook::processOrder(Order& incoming) {
             if (level.head) level.head->prev = nullptr;
             else level.tail = nullptr;
 
+            orderLookup[order->id] = nullptr;
             ordersPool.deallocateOrder(order);
         }
     }
@@ -193,12 +204,15 @@ bool OrderBook::canFill(Order& incoming) {
                 // If current price level empty, move price down
                 if (!currentOrder) currentPrice--;
             }
+
+            if (currentOrder) {
+                currentQty = currentOrder->quantity;
+            }
         }
 
         if (!currentOrder) return false;
-        currentQty = currentOrder->quantity;
 
-        uint32_t tradeQty = std::min(incoming_copy.quantity, currentOrder->quantity);
+        uint32_t tradeQty = std::min(incoming_copy.quantity, currentQty);
         incoming_copy.quantity -= tradeQty;
         currentQty -= tradeQty;
 
