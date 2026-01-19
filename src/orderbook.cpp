@@ -15,7 +15,7 @@ void OrderBook::addOrder(const Order& order) {
 
     orderLookup[order.id] = orderPtr;
 
-    std::vector<Level>& book = order.orderType == Order::BUY ? bidOrders : askOrders;
+    std::vector<Level>& book = order.side == Order::BUY ? bidOrders : askOrders;
 
     Level& level = book[order.price];
     if (level.head == nullptr) {
@@ -28,7 +28,7 @@ void OrderBook::addOrder(const Order& order) {
         level.tail = orderPtr;
     }
 
-    if (order.orderType == Order::BUY) {
+    if (order.side == Order::BUY) {
         maxBid = std::max(maxBid, order.price);
     } else {
         minAsk = std::min(minAsk, order.price);
@@ -42,7 +42,7 @@ void OrderBook::removeOrder(uint64_t orderId) {
     }
 
     Order* orderToRemove = orderLookup[orderId];
-    std::vector<Level>& book = orderToRemove->orderType == Order::BUY ? bidOrders : askOrders;
+    std::vector<Level>& book = orderToRemove->side == Order::BUY ? bidOrders : askOrders;
 
     if (orderToRemove->prev) {
         orderToRemove->prev->next = orderToRemove->next;
@@ -63,7 +63,7 @@ void OrderBook::removeOrder(uint64_t orderId) {
 }
 
 void OrderBook::removeOrder(Order *orderToRemove) {
-    std::vector<Level>& book = orderToRemove->orderType == Order::BUY ? bidOrders : askOrders;
+    std::vector<Level>& book = orderToRemove->side == Order::BUY ? bidOrders : askOrders;
 
     if (orderToRemove->prev) {
         orderToRemove->prev->next = orderToRemove->next;
