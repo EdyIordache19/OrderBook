@@ -24,7 +24,7 @@ struct alignas(64) Order {
     uint32_t quantity;
     uint64_t timestamp;
 
-    enum type : uint8_t { BUY, SELL } side;
+    enum side : uint8_t { BUY, SELL } side;
     OrderType type;
     TimeInForce tif;
 
