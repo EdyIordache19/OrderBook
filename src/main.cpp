@@ -10,6 +10,13 @@ void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running
     while (running.load(std::memory_order_acquire) || !buffer.is_empty()) {
         Order order;
         if (!buffer.pop(order)) {
+            if (order.type == OrderType::MARKET) {
+                if (order.side == Order::BUY) order.price = 10000;
+                else order.price = 0;
+
+                order.tif = TimeInForce::IOC;
+            }
+
             if (order.tif == TimeInForce::IOC) {
                 // Just process (match order with book) and dismiss the remainder
                 orderBook.processOrder(order);

@@ -30,8 +30,10 @@ void OrderBook::addOrder(Order& order) {
 
     if (order.side == Order::BUY) {
         maxBid = std::max(maxBid, order.price);
+        activeBidsCount++;
     } else {
         minAsk = std::min(minAsk, order.price);
+        activeAsksCount++;
     }
 
 }
@@ -143,6 +145,8 @@ void OrderBook::matchOrders() {
 uint32_t OrderBook::processOrder(Order& incoming) {
     while (incoming.quantity > 0) {
         if (incoming.side == Order::BUY) {
+            if (activeAsksCount == 0) break;
+
             if (minAsk > incoming.price) break;
             if (askOrders[minAsk].head == nullptr) {
                 minAsk++;
@@ -150,6 +154,8 @@ uint32_t OrderBook::processOrder(Order& incoming) {
                 continue;
             }
         } else {
+            if (activeBidsCount == 0) break;
+
             if (maxBid < incoming.price) break;
             if (bidOrders[maxBid].head == nullptr) {
                 if (maxBid == 0) break;
@@ -173,6 +179,12 @@ uint32_t OrderBook::processOrder(Order& incoming) {
 
             orderLookup[order->id] = nullptr;
             ordersPool.deallocateOrder(order);
+
+            if (order->side == Order::BUY) {
+                activeBidsCount--;
+            } else {
+                activeAsksCount--;
+            }
         }
     }
 

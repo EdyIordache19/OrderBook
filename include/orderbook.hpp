@@ -22,6 +22,9 @@ private:
 
     std::vector<Order*> orderLookup;
 
+    uint32_t activeBidsCount = 0;
+    uint32_t activeAsksCount = 0;
+
     uint64_t maxBid = 0;
     uint64_t minAsk = 9999999;
 public:
