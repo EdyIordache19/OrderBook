@@ -11,7 +11,6 @@ RingBuffer::RingBuffer(size_t buff_size) {
 
 int RingBuffer::push(const Order& order) {
     if (tail - head.load(std::memory_order_acquire) >= buff_size) {
-        // std::cout << "BUFFER IS FULL, CAN'T WRITE\n";
         return 1;
     }
 
@@ -24,7 +23,6 @@ int RingBuffer::push(const Order& order) {
 
 int RingBuffer::pop(Order& order) {
     if (tail.load(std::memory_order_acquire) == head) {
-        // std::cout << "BUFFER IS EMPTY, CAN'T READ\n";
         return 1;
     }
 
