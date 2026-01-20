@@ -11,7 +11,7 @@
 #include <map>
 #include <list>
 
-#define NUM_ORDERS 1000000
+#define NUM_ORDERS 100
 
 class OrderBook {
 private:

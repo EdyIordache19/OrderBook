@@ -15,7 +15,7 @@ void OrderBook::addOrder(Order& order) {
 
     orderLookup[order.id] = orderPtr;
 
-    std::vector<Level>& book = order.side == Order::BUY ? bidOrders : askOrders;
+    std::vector<Level>& book = order.side == Side::BUY ? bidOrders : askOrders;
 
     Level& level = book[order.price];
     if (level.head == nullptr) {
@@ -28,7 +28,7 @@ void OrderBook::addOrder(Order& order) {
         level.tail = orderPtr;
     }
 
-    if (order.side == Order::BUY) {
+    if (order.side == Side::BUY) {
         maxBid = std::max(maxBid, order.price);
         activeBidsCount++;
     } else {
@@ -44,7 +44,7 @@ void OrderBook::removeOrder(uint64_t orderId) {
     }
 
     Order* orderToRemove = orderLookup[orderId];
-    std::vector<Level>& book = orderToRemove->side == Order::BUY ? bidOrders : askOrders;
+    std::vector<Level>& book = orderToRemove->side == Side::BUY ? bidOrders : askOrders;
 
     if (orderToRemove->prev) {
         orderToRemove->prev->next = orderToRemove->next;
@@ -65,7 +65,7 @@ void OrderBook::removeOrder(uint64_t orderId) {
 }
 
 void OrderBook::removeOrder(Order *orderToRemove) {
-    std::vector<Level>& book = orderToRemove->side == Order::BUY ? bidOrders : askOrders;
+    std::vector<Level>& book = orderToRemove->side == Side::BUY ? bidOrders : askOrders;
 
     if (orderToRemove->prev) {
         orderToRemove->prev->next = orderToRemove->next;
@@ -144,7 +144,7 @@ void OrderBook::matchOrders() {
 
 uint32_t OrderBook::processOrder(Order& incoming) {
     while (incoming.quantity > 0) {
-        if (incoming.side == Order::BUY) {
+        if (incoming.side == Side::BUY) {
             if (activeAsksCount == 0) break;
 
             if (minAsk > incoming.price) break;
@@ -164,7 +164,7 @@ uint32_t OrderBook::processOrder(Order& incoming) {
             }
         }
 
-        Level& level = (incoming.side == Order::BUY) ? askOrders[minAsk] : bidOrders[maxBid];
+        Level& level = (incoming.side == Side::BUY) ? askOrders[minAsk] : bidOrders[maxBid];
         Order *order = level.head;
 
         uint32_t tradeQuantity = std::min(incoming.quantity, order->quantity);
@@ -180,7 +180,7 @@ uint32_t OrderBook::processOrder(Order& incoming) {
             orderLookup[order->id] = nullptr;
             ordersPool.deallocateOrder(order);
 
-            if (order->side == Order::BUY) {
+            if (order->side == Side::BUY) {
                 activeBidsCount--;
             } else {
                 activeAsksCount--;
@@ -194,14 +194,14 @@ uint32_t OrderBook::processOrder(Order& incoming) {
 bool OrderBook::canFill(Order& incoming) {
     Order incoming_copy = incoming;
 
-    uint64_t currentPrice = incoming.side == Order::BUY ? minAsk : maxBid;
+    uint64_t currentPrice = incoming.side == Side::BUY ? minAsk : maxBid;
 
     Order *currentOrder = nullptr;
     uint32_t currentQty = 0;
 
     while (incoming_copy.quantity > 0) {
         while (!currentOrder) {
-            if (incoming.side == Order::BUY) {
+            if (incoming.side == Side::BUY) {
                 // If price is too big return false (whole BUY order not fulfilled)
                 if (currentPrice > incoming.price || currentPrice > askOrders.size()) return false;
                 currentOrder = askOrders[currentPrice].head;
@@ -234,7 +234,7 @@ bool OrderBook::canFill(Order& incoming) {
             if (currentOrder) {
                 currentQty = currentOrder->quantity;
             } else {
-                if (incoming.side == Order::BUY) {
+                if (incoming.side == Side::BUY) {
                     currentPrice++;
                 } else {
                     currentPrice--;

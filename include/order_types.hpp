@@ -13,6 +13,11 @@ enum TimeInForce : uint8_t {
     FOK = 2 // Fill or Kill
 };
 
+enum Side : uint8_t {
+    BUY = 0,
+    SELL = 1
+};
+
 struct Trade {
     uint64_t price;
     uint32_t quantity;
@@ -24,7 +29,7 @@ struct alignas(64) Order {
     uint32_t quantity;
     uint64_t timestamp;
 
-    enum side : uint8_t { BUY, SELL } side;
+    Side side;
     OrderType type;
     TimeInForce tif;
 

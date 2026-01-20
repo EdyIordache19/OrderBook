@@ -2,6 +2,7 @@
 #include "orderbook.hpp"
 #include "orders_generator.hpp"
 #include "ring_buffer.hpp"
+#include "gateway.hpp"
 
 
 void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running, std::vector<uint64_t>& latencies) {
@@ -11,7 +12,7 @@ void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running
         Order order;
         if (!buffer.pop(order)) {
             if (order.type == OrderType::MARKET) {
-                if (order.side == Order::BUY) order.price = NUM_ORDERS - 1;
+                if (order.side == Side::BUY) order.price = NUM_ORDERS - 1;
                 else order.price = 0;
 
                 order.tif = TimeInForce::IOC;
@@ -56,27 +57,29 @@ int main(int argc, char* argv[]) {
     }
 
     // Generate random orders and write to file
-    std::string ordersFile = argv[1];
-
-    std::list<Order> orders = OrdersGenerator::generateOrdersToFile(ordersFile, NUM_ORDERS);
+    // std::string ordersFile = argv[1];
+    // std::list<Order> orders = OrdersGenerator::generateOrdersToFile(ordersFile, NUM_ORDERS);
 
     auto start = std::chrono::high_resolution_clock::now();
 
     // Add orders to the order book
-    for (auto& order : orders) {
-        order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    // for (auto& order : orders) {
+    //     order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
 
-        while (buffer.push(order) != 0) {
-            continue;
-        }
+    //     while (buffer.push(order) != 0) {
+    //         continue;
+    //     }
 
-        /**
-         * Wait as in a real-life scenario
-         * If no wait, the throughput is bigger, but the buffer gets flooded and the latency is very high
-         */
-        auto start_wait = std::chrono::high_resolution_clock::now();
-        while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(250));
-    }
+    //     /**
+    //      * Wait as in a real-life scenario
+    //      * If no wait, the throughput is bigger, but the buffer gets flooded and the latency is very high
+    //      */
+    //     auto start_wait = std::chrono::high_resolution_clock::now();
+    //     while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(250));
+    // }
+
+    Gateway gateway;
+    gateway.run(buffer, running);
 
     running.store(false, std::memory_order_release);
     engine_thread.join();
