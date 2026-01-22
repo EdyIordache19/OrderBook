@@ -10,7 +10,7 @@
 #include "../include/order_types.hpp"
 #include "../include/gateway.hpp"
 
-#define BATCH_SIZE 32
+#define BATCH_SIZE 100
 
 int main() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);

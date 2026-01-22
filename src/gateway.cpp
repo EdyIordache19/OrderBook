@@ -1,5 +1,6 @@
 #include "gateway.hpp"
 #include "orderbook.hpp"
+#include "main.hpp"
 
 #include <stdlib.h>
 #include <iostream>
@@ -14,6 +15,8 @@
 #include <netinet/in.h>
 
 void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
+    pin_thread_to_core(2);
+
     int sockfd;
     char buffer[MAXLINE];
 
@@ -31,6 +34,10 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
+
+    // Spin for 50 us, to not wake up every time
+    int busy_poll_usec = 50;
+    setsockopt(sockfd, SOL_SOCKET, SO_BUSY_POLL, &busy_poll_usec, sizeof(busy_poll_usec));
 
     if (bind(sockfd, (const struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         std::cout << "ERROR BINDING: " << strerror(errno) << "\n";

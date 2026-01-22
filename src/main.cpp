@@ -4,8 +4,16 @@
 #include "ring_buffer.hpp"
 #include "gateway.hpp"
 
+void pin_thread_to_core(int core_id) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+}
 
 void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running, std::vector<uint64_t>& latencies) {
+    pin_thread_to_core(1);
+
     latencies.reserve(NUM_ORDERS);
 
     while (running.load(std::memory_order_acquire) || !buffer.is_empty()) {
@@ -48,26 +56,6 @@ int main(int argc, char* argv[]) {
         std::cout << "You need to parse 2 files\n";
         return 1;
     }
-
-    // Generate random orders and write to file
-    // std::string ordersFile = argv[1];
-    // std::list<Order> orders = OrdersGenerator::generateOrdersToFile(ordersFile, NUM_ORDERS);
-
-    // Add orders to the order book
-    // for (auto& order : orders) {
-    //     order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-
-    //     while (buffer.push(order) != 0) {
-    //         continue;
-    //     }
-
-    //     /**
-    //      * Wait as in a real-life scenario
-    //      * If no wait, the throughput is bigger, but the buffer gets flooded and the latency is very high
-    //      */
-    //     auto start_wait = std::chrono::high_resolution_clock::now();
-    //     while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(250));
-    // }
 
     Gateway gateway;
     gateway.run(buffer, running);
