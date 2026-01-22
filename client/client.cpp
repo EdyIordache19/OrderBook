@@ -10,14 +10,7 @@
 #include "../include/order_types.hpp"
 #include "../include/gateway.hpp"
 
-// struct __attribute__((packed)) WireMessage {
-//     uint64_t id;
-//     uint64_t price;
-//     uint32_t quantity;
-//     char side;
-//     uint8_t type;
-//     uint8_t tif;
-// };
+#define BATCH_SIZE 32
 
 int main() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -28,23 +21,38 @@ int main() {
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    WireMessage msg;
-    msg.price = 100;
-    msg.quantity = 10;
-    msg.side = 'B';
-    msg.type = 0;
-    msg.tif = 0;
-    msg.id = 1;
+    struct iovec iovecs[BATCH_SIZE];
+    struct mmsghdr msgvec[BATCH_SIZE];
+    WireMessage msgs[BATCH_SIZE];
 
-    std::cout << "Blasting " << NUM_ORDERS << " orders..." << std::endl;
+    for (int i = 0; i < BATCH_SIZE; i++) {
+        memset(&iovecs[i], 0, sizeof(iovecs[i]));
+        iovecs[i].iov_base = &msgs[i];
+        iovecs[i].iov_len = sizeof(WireMessage);
 
-    for (uint64_t i = 0; i < NUM_ORDERS; i++) {
-        msg.id = i;
-        sendto(sockfd, &msg, sizeof(msg), 0, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+        memset(&msgvec[i], 0, sizeof(msgvec[i]));
+        msgvec[i].msg_hdr.msg_name = &servaddr;
+        msgvec[i].msg_hdr.msg_namelen = sizeof(servaddr);
+        msgvec[i].msg_hdr.msg_iov = &iovecs[i];
+        msgvec[i].msg_hdr.msg_iovlen = 1;
+
+        msgs[i].id = i;
+        msgs[i].price = 100;
+        msgs[i].quantity = 10;
+        msgs[i].side = 'B';
+        msgs[i].tif = 0;
+        msgs[i].type = 0;
     }
 
-    msg.type = 99;
-    sendto(sockfd, &msg, sizeof(msg), 0, (const struct sockaddr *)&servaddr, sizeof(servaddr));
+    std::cout << "Blasting " << NUM_ORDERS << " orders in batches of " << BATCH_SIZE << "..." << std::endl;
+
+    for (uint64_t i = 0; i < NUM_ORDERS; i += BATCH_SIZE) {
+        int ret = sendmmsg(sockfd, msgvec, BATCH_SIZE, 0);
+        if (ret == -1) {
+            std::cout << "ERROR WITH SENDMMSG\n";
+            break;
+        }
+    }
 
     std::cout << "Done." << std::endl;
     close(sockfd);
