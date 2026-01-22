@@ -1,6 +1,6 @@
 CXX      := g++
-CXXFLAGS := -std=c++17 -O3 -march=native -funroll-loops -Wall -Wextra -pedantic -Iinclude -MMD -MP
-LDFLAGS  :=
+CXXFLAGS := -std=c++17 -O3 -march=native -funroll-loops -Wall -Wextra -pedantic -flto -Iinclude -MMD -MP
+LDFLAGS  := -flto
 
 SRCDIR   := src
 BINDIR   := bin

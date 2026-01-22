@@ -11,13 +11,6 @@ void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running
     while (running.load(std::memory_order_acquire) || !buffer.is_empty()) {
         Order order;
         if (!buffer.pop(order)) {
-            if (order.type == OrderType::MARKET) {
-                if (order.side == Side::BUY) order.price = NUM_ORDERS - 1;
-                else order.price = 0;
-
-                order.tif = TimeInForce::IOC;
-            }
-
             if (order.tif == TimeInForce::IOC) {
                 // Just process (match order with book) and dismiss the remainder
                 orderBook.processOrder(order);
@@ -44,7 +37,7 @@ void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running
 
 int main(int argc, char* argv[]) {
     OrderBook orderBook;
-    RingBuffer buffer(128);
+    RingBuffer buffer(256);
     std::vector<uint64_t> latencies;
 
     std::atomic<bool> running = true;
@@ -59,8 +52,6 @@ int main(int argc, char* argv[]) {
     // Generate random orders and write to file
     // std::string ordersFile = argv[1];
     // std::list<Order> orders = OrdersGenerator::generateOrdersToFile(ordersFile, NUM_ORDERS);
-
-    auto start = std::chrono::high_resolution_clock::now();
 
     // Add orders to the order book
     // for (auto& order : orders) {
@@ -84,22 +75,14 @@ int main(int argc, char* argv[]) {
     running.store(false, std::memory_order_release);
     engine_thread.join();
 
-    auto end = std::chrono::high_resolution_clock::now();
-
     // Print current orders
     orderBook.printOrders(argv[2]);
 
-    std::chrono::duration<double> diff = end - start;
-    double throughput = NUM_ORDERS / diff.count();
-
-    std::cout << "Processed " << NUM_ORDERS << " orders in " << diff.count() << " seconds.\n";
-    std::cout << "Throughput: " << throughput << " orders/second. \n";
-
     std::sort(latencies.begin(), latencies.end());
 
-    double median = latencies[NUM_ORDERS * 0.5];
-    double p99 = latencies[NUM_ORDERS * 0.99];
-    double p99_9 = latencies[NUM_ORDERS * 0.999];
+    double median = latencies[latencies.size() * 0.5];
+    double p99 = latencies[latencies.size() * 0.99];
+    double p99_9 = latencies[latencies.size() * 0.999];
 
     std::cout << "Median Latency:  " << median << " ns\n";
     std::cout << "99% Latency:     " << p99 << " ns\n";

@@ -38,16 +38,23 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
         exit(-1);
     }
 
+    std::chrono::high_resolution_clock::time_point start;
+
     uint64_t orders_received = 0;
     while (running) {
         socklen_t len = sizeof(serv_addr);
-        int n_bytes = recvfrom(sockfd, (char *)buffer, MAXLINE,
+        long unsigned int n_bytes = recvfrom(sockfd, (char *)buffer, MAXLINE,
                     MSG_WAITALL, (struct sockaddr *)&serv_addr, &len);
+        if (orders_received == 0) {
+            start = std::chrono::high_resolution_clock::now();
+        }
 
-        buffer[n_bytes] = '\0';
+        if (n_bytes < sizeof(WireMessage)) {
+            continue;
+        }
 
         WireMessage message = *(WireMessage *)buffer;
-        std::cout << "Id of received order: " << message.id << "\n";
+        // std::cout << "Id of received order: " << message.id << "\n";
 
         Order order;
 
@@ -60,7 +67,7 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
         else order.side = Side::SELL;
 
         if (message.type == 0) order.type = OrderType::LIMIT;
-        else {
+        else if (message.type == 1) {
             order.type = OrderType::MARKET;
             if (order.side == Side::BUY) {
                 order.price = NUM_ORDERS - 1;
@@ -81,15 +88,24 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
                 break;
         }
 
-        order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-
-        ring_buffer.push(order);
         orders_received++;
-        if (orders_received >= NUM_ORDERS) {
-            std::cout << "Gateway finished receiving all " << NUM_ORDERS << " orders\n";
+        if (orders_received >= NUM_ORDERS || message.type == 99) {
+            std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
             running.store(false, std::memory_order_release);
+
+            auto end = std::chrono::high_resolution_clock::now();
+
+            std::chrono::duration<double> diff = end - start;
+            double throughput = NUM_ORDERS / diff.count();
+
+            std::cout << "Processed " << NUM_ORDERS << " orders in " << diff.count() << " seconds.\n";
+            std::cout << "Throughput: " << throughput << " orders/second. \n";
+
             break;
         }
+
+        order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+        while (ring_buffer.push(order) != 0);
     }
 
     close(sockfd);
