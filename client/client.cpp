@@ -10,9 +10,25 @@
 #include "../include/order_types.hpp"
 #include "../include/gateway.hpp"
 
-#define BATCH_SIZE 100
+#include "../include/cxxopts.hpp"
 
-int main() {
+int main(int argc, char *argv[]) {
+    cxxopts::Options options("UDP-Client", "UDP Server for sending orders");
+
+    options.add_options()
+        ("n, num-orders", "Number of orders to send", cxxopts::value<uint64_t>()->default_value("1000000"))
+        ("b, batch-size", "Size of batches to send orders", cxxopts::value<uint16_t>()->default_value("100"));
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help")) {
+        std::cout << options.help() << std::endl;
+        return 0;
+    }
+
+    uint64_t numOrders = result["num-orders"].as<uint64_t>();
+    uint16_t batchSize = result["batch-size"].as<uint16_t>();
+
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
@@ -21,11 +37,11 @@ int main() {
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    struct iovec iovecs[BATCH_SIZE];
-    struct mmsghdr msgvec[BATCH_SIZE];
-    WireMessage msgs[BATCH_SIZE];
+    struct iovec iovecs[batchSize];
+    struct mmsghdr msgvec[batchSize];
+    WireMessage msgs[batchSize];
 
-    for (int i = 0; i < BATCH_SIZE; i++) {
+    for (int i = 0; i < batchSize; i++) {
         memset(&iovecs[i], 0, sizeof(iovecs[i]));
         iovecs[i].iov_base = &msgs[i];
         iovecs[i].iov_len = sizeof(WireMessage);
@@ -44,10 +60,10 @@ int main() {
         msgs[i].type = 0;
     }
 
-    std::cout << "Blasting " << NUM_ORDERS << " orders in batches of " << BATCH_SIZE << "..." << std::endl;
+    std::cout << "Blasting " << numOrders << " orders in batches of " << batchSize << "..." << std::endl;
 
-    for (uint64_t i = 0; i < NUM_ORDERS; i += BATCH_SIZE) {
-        int ret = sendmmsg(sockfd, msgvec, BATCH_SIZE, 0);
+    for (uint64_t i = 0; i < numOrders; i += batchSize) {
+        int ret = sendmmsg(sockfd, msgvec, batchSize, 0);
         if (ret == -1) {
             std::cout << "ERROR WITH SENDMMSG\n";
             break;

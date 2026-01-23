@@ -1,10 +1,11 @@
 #include "orderbook.hpp"
 
-OrderBook::OrderBook() {
-    bidOrders.resize(NUM_ORDERS);
-    askOrders.resize(NUM_ORDERS);
+OrderBook::OrderBook(uint64_t numOfOrders)
+    : numOrders(numOfOrders) {
+    bidOrders.resize(numOfOrders);
+    askOrders.resize(numOfOrders);
 
-    orderLookup.resize(NUM_ORDERS + 1);
+    orderLookup.resize(numOfOrders + 1);
 }
 
 void OrderBook::addOrder(Order& order) {
@@ -246,7 +247,7 @@ bool OrderBook::canFill(Order& incoming) {
     return true;
 }
 
-void OrderBook::printOrders(char *filename) {
+void OrderBook::printOrders(std::string filename) {
     std::ofstream outFile(filename);
 
     outFile << "Sell Orders:\n";

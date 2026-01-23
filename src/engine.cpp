@@ -1,12 +1,12 @@
 #include "engine.hpp"
 #include "main.hpp"
 
-Engine::Engine(RingBuffer& buffer, std::atomic<bool>& isRunning, OrderBook& book)
+Engine::Engine(RingBuffer& buffer, std::atomic<bool>& isRunning, OrderBook& book, uint64_t numOrders)
     : ringBuffer(buffer),
       running(isRunning),
       orderBook(book)
 {
-    latencies.reserve(100000);
+    latencies.reserve(numOrders);
 }
 
 void Engine::runLoop() {

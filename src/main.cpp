@@ -5,6 +5,8 @@
 #include "gateway.hpp"
 #include "engine.hpp"
 
+#include <cxxopts.hpp>
+
 void pin_thread_to_core(int core_id) {
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -13,27 +15,45 @@ void pin_thread_to_core(int core_id) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cout << "You need to parse 2 files\n";
+    cxxopts::Options options("OrderBook", "High-Performance OrderBook Engine");
+
+    options.add_options()
+        ("h,help", "Print usage")
+        ("o, output", "Output file for orders", cxxopts::value<std::string>())
+        ("b, buffer-size", "Size of ring buffer", cxxopts::value<size_t>()->default_value("65536"))
+        ("n, num-orders", "Number of orders to be parsed", cxxopts::value<uint64_t>()->default_value("1000000"));
+
+    auto result = options.parse(argc, argv);
+    if (result.count("help")) {
+        std::cout << options.help() << std::endl;
+        return 0;
+    }
+
+    if (!result.count("output")) {
+        std::cerr << "Output file not specified\n";
         return 1;
     }
 
-    OrderBook orderBook;
-    RingBuffer buffer(BUFFER_SIZE);
+    size_t bufferSize = result["buffer-size"].as<size_t>();
+    uint64_t numOrders = result["num-orders"].as<uint64_t>();
+
+    OrderBook orderBook(numOrders);
+    RingBuffer buffer(bufferSize);
 
     std::atomic<bool> running = true;
 
-    Engine engine(buffer, running, orderBook);
+    Engine engine(buffer, running, orderBook, numOrders);
     engine.start();
 
     Gateway gateway;
-    gateway.run(buffer, running);
+    gateway.run(buffer, running, numOrders);
 
     engine.stop();
     engine.printStats();
 
     // Print current orders
-    orderBook.printOrders(argv[1]);
+    std::string filename = result["output"].as<std::string>();
+    orderBook.printOrders(filename);
 
     return 0;
 }

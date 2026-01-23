@@ -19,5 +19,5 @@ struct WireMessage {
 
 class Gateway {
 public:
-    void run(RingBuffer& ring_buffer, std::atomic<bool>& running);
+    void run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t numOrders);
 };

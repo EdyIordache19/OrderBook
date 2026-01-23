@@ -11,11 +11,10 @@
 #include <map>
 #include <list>
 
-#define NUM_ORDERS 1000000
-
 class OrderBook {
 private:
-    OrdersPool ordersPool{NUM_ORDERS};
+    uint64_t numOrders;
+    OrdersPool ordersPool{numOrders};
 
     std::vector<Level> askOrders;
     std::vector<Level> bidOrders;
@@ -28,12 +27,12 @@ private:
     uint64_t maxBid = 0;
     uint64_t minAsk = 9999999;
 public:
-    OrderBook();
+    OrderBook(uint64_t numOfOrders);
     void addOrder(Order& order);
     void removeOrder(uint64_t orderId);
     void removeOrder(Order *orderToRemove);
     void matchOrders();
     uint32_t processOrder(Order& incoming);
     bool canFill(Order& order);
-    void printOrders(char *filename);
+    void printOrders(std::string filename);
 };

@@ -5,8 +5,8 @@
 
 #include <thread>
 #include <string.h>
-
-#define BUFFER_SIZE 256
+#include <atomic>
+#include <vector>
 
 class Engine {
 private:
@@ -18,7 +18,7 @@ private:
 
     void runLoop();
 public:
-    Engine(RingBuffer& buffer, std::atomic<bool>& isRunning, OrderBook& book);
+    Engine(RingBuffer& buffer, std::atomic<bool>& isRunning, OrderBook& book, uint64_t numOrders);
     void start();
     void stop();
     void printStats();

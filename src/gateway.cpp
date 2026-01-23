@@ -14,7 +14,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
+void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t numOrders) {
     pin_thread_to_core(2);
 
     int sockfd;
@@ -77,7 +77,7 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
         else if (message.type == 1) {
             order.type = OrderType::MARKET;
             if (order.side == Side::BUY) {
-                order.price = NUM_ORDERS - 1;
+                order.price = numOrders - 1;
             } else {
                 order.price = 0;
             }
@@ -96,16 +96,16 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running) {
         }
 
         orders_received++;
-        if (orders_received >= NUM_ORDERS || message.type == 99) {
+        if (orders_received >= numOrders || message.type == 99) {
             std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
             running.store(false, std::memory_order_release);
 
             auto end = std::chrono::high_resolution_clock::now();
 
             std::chrono::duration<double> diff = end - start;
-            double throughput = NUM_ORDERS / diff.count();
+            double throughput = numOrders / diff.count();
 
-            std::cout << "Processed " << NUM_ORDERS << " orders in " << diff.count() << " seconds.\n";
+            std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
             std::cout << "Throughput: " << throughput << " orders/second. \n";
 
             break;
