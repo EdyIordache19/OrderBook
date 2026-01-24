@@ -14,7 +14,7 @@
 class OrderBook {
 private:
     uint64_t numOrders;
-    OrdersPool ordersPool{numOrders};
+    OrdersPool ordersPool{numOrders*2};
 
     std::vector<Level> askOrders;
     std::vector<Level> bidOrders;
@@ -35,4 +35,5 @@ public:
     uint32_t processOrder(Order& incoming);
     bool canFill(Order& order);
     void printOrders(std::string filename);
+    void printOrder(const Order *order, std::ostream& outFile);
 };

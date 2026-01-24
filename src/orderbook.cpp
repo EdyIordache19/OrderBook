@@ -252,20 +252,10 @@ void OrderBook::printOrders(std::string filename) {
 
     outFile << "Sell Orders:\n";
 
-    for (Level level : askOrders) {
+    for (const Level& level : askOrders) {
         Order* order = level.head;
         while (order) {
-            std::string type;
-            if (order->type == OrderType::LIMIT) {
-                type = "Limit";
-            } else if (order->type == OrderType::MARKET) {
-                type = "Market";
-            } else {
-                type = "KILL";
-            }
-
-            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity
-                    << ", Type: " << type << "\n";
+            printOrder(order, outFile);
             order = order->next;
         }
     }
@@ -273,21 +263,25 @@ void OrderBook::printOrders(std::string filename) {
     outFile << "----------------------------------\n";
 
     outFile << "Buy Orders:\n";
-    for (Level level : bidOrders) {
+    for (const Level& level : bidOrders) {
         Order* order = level.head;
         while (order) {
-            std::string type;
-            if (order->type == OrderType::LIMIT) {
-                type = "Limit";
-            } else if (order->type == OrderType::MARKET) {
-                type = "Market";
-            } else {
-                type = "KILL";
-            }
-
-            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity
-                    << ", Type: " << type << "\n";
+            printOrder(order, outFile);
             order = order->next;
         }
     }
+}
+
+void OrderBook::printOrder(const Order *order, std::ostream& outFile) {
+    std::string type;
+    if (order->type == OrderType::LIMIT) {
+        type = "Limit";
+    } else if (order->type == OrderType::MARKET) {
+        type = "Market";
+    } else {
+        type = "KILL";
+    }
+
+    outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity
+            << ", Type: " << type << "\n";
 }

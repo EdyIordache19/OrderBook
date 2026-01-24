@@ -79,11 +79,13 @@ int main(int argc, char *argv[]) {
     killMessage.tif = 0;
     killMessage.type = 99;
 
-    uint64_t n = sendto(sockfd, &killMessage, sizeof(killMessage), 0,
+    for (int i = 0; i < 10; i++) {
+        uint64_t n = sendto(sockfd, &killMessage, sizeof(killMessage), 0,
             (const struct sockaddr *)&servaddr, sizeof(servaddr));
-    if (n < sizeof(WireMessage)) {
-        std::cout << "Error sending kill message";
-        return 1;
+        if (n < sizeof(WireMessage)) {
+            std::cout << "Error sending kill message";
+            return 1;
+        }
     }
 
     std::cout << "Done." << std::endl;
