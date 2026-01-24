@@ -255,7 +255,17 @@ void OrderBook::printOrders(std::string filename) {
     for (Level level : askOrders) {
         Order* order = level.head;
         while (order) {
-            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            std::string type;
+            if (order->type == OrderType::LIMIT) {
+                type = "Limit";
+            } else if (order->type == OrderType::MARKET) {
+                type = "Market";
+            } else {
+                type = "KILL";
+            }
+
+            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity
+                    << ", Type: " << type << "\n";
             order = order->next;
         }
     }
@@ -266,7 +276,17 @@ void OrderBook::printOrders(std::string filename) {
     for (Level level : bidOrders) {
         Order* order = level.head;
         while (order) {
-            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity << "\n";
+            std::string type;
+            if (order->type == OrderType::LIMIT) {
+                type = "Limit";
+            } else if (order->type == OrderType::MARKET) {
+                type = "Market";
+            } else {
+                type = "KILL";
+            }
+
+            outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity
+                    << ", Type: " << type << "\n";
             order = order->next;
         }
     }

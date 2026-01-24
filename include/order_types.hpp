@@ -4,7 +4,8 @@
 
 enum OrderType : uint8_t {
     LIMIT = 0,
-    MARKET = 1
+    MARKET = 1,
+    KILL = 99
 };
 
 enum TimeInForce : uint8_t {

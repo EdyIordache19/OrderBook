@@ -70,6 +70,22 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    WireMessage killMessage;
+
+    killMessage.id = 0;
+    killMessage.price = 100;
+    killMessage.quantity = 10;
+    killMessage.side = 'S';
+    killMessage.tif = 0;
+    killMessage.type = 99;
+
+    uint64_t n = sendto(sockfd, &killMessage, sizeof(killMessage), 0,
+            (const struct sockaddr *)&servaddr, sizeof(servaddr));
+    if (n < sizeof(WireMessage)) {
+        std::cout << "Error sending kill message";
+        return 1;
+    }
+
     std::cout << "Done." << std::endl;
     close(sockfd);
     return 0;

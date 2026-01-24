@@ -81,6 +81,8 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t 
             } else {
                 order.price = 0;
             }
+        } else {
+            order.type = OrderType::KILL;
         }
 
         switch (message.tif) {
@@ -95,8 +97,11 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t 
                 break;
         }
 
+        order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+        while (ring_buffer.push(order) != 0);
+
         orders_received++;
-        if (orders_received >= numOrders || message.type == 99) {
+        if (message.type == 99) {
             std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
             running.store(false, std::memory_order_release);
 
@@ -110,9 +115,6 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t 
 
             break;
         }
-
-        order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-        while (ring_buffer.push(order) != 0);
     }
 
     close(sockfd);

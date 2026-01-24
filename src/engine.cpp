@@ -14,6 +14,11 @@ void Engine::runLoop() {
     while (running.load(std::memory_order_acquire) || !ringBuffer.is_empty()) {
         Order order;
         if (!ringBuffer.pop(order)) {
+            if (order.type == OrderType::KILL) {
+                orderBook.addOrder(order);
+                break;
+            }
+
             if (order.tif == TimeInForce::IOC) {
                 // Just process (match order with book) and dismiss the remainder
                 orderBook.processOrder(order);
