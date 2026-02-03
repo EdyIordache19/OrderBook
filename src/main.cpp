@@ -2,105 +2,58 @@
 #include "orderbook.hpp"
 #include "orders_generator.hpp"
 #include "ring_buffer.hpp"
+#include "gateway.hpp"
+#include "engine.hpp"
 
+#include <cxxopts.hpp>
 
-void engine(OrderBook& orderBook, RingBuffer& buffer, std::atomic<bool>& running, std::vector<uint64_t>& latencies) {
-    latencies.reserve(NUM_ORDERS);
-
-    while (running.load(std::memory_order_acquire) || !buffer.is_empty()) {
-        Order order;
-        if (!buffer.pop(order)) {
-            if (order.type == OrderType::MARKET) {
-                if (order.side == Order::BUY) order.price = NUM_ORDERS - 1;
-                else order.price = 0;
-
-                order.tif = TimeInForce::IOC;
-            }
-
-            if (order.tif == TimeInForce::IOC) {
-                // Just process (match order with book) and dismiss the remainder
-                orderBook.processOrder(order);
-            } else if (order.tif == TimeInForce::FOK) {
-                // Check if it can be filled entirely and process order
-                if (orderBook.canFill(order)) {
-                    orderBook.processOrder(order);
-                }
-            } else {
-                // Process order and add remainder to book
-                uint32_t remaining_qty = orderBook.processOrder(order);
-
-                order.quantity = remaining_qty;
-                orderBook.addOrder(order);
-            }
-
-            uint64_t now = std::chrono::steady_clock::now().time_since_epoch().count();
-            latencies.push_back(now - order.timestamp);
-        } else {
-            continue;
-        }
-    }
+void pin_thread_to_core(int core_id) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(core_id, &cpuset);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 }
 
 int main(int argc, char* argv[]) {
-    OrderBook orderBook;
-    RingBuffer buffer(128);
-    std::vector<uint64_t> latencies;
+    cxxopts::Options options("OrderBook", "High-Performance OrderBook Engine");
 
-    std::atomic<bool> running = true;
+    options.add_options()
+        ("h,help", "Print usage")
+        ("o, output", "Output file for orders", cxxopts::value<std::string>())
+        ("b, buffer-size", "Size of ring buffer", cxxopts::value<size_t>()->default_value("65536"))
+        ("n, num-orders", "Number of orders to be parsed", cxxopts::value<uint64_t>()->default_value("1000000"));
 
-    std::thread engine_thread(engine, std::ref(orderBook), std::ref(buffer), std::ref(running), std::ref(latencies));
+    auto result = options.parse(argc, argv);
+    if (result.count("help")) {
+        std::cout << options.help() << std::endl;
+        return 0;
+    }
 
-    if (argc < 3) {
-        std::cout << "You need to parse 2 files\n";
+    if (!result.count("output")) {
+        std::cerr << "Output file not specified\n";
         return 1;
     }
 
-    // Generate random orders and write to file
-    std::string ordersFile = argv[1];
+    size_t bufferSize = result["buffer-size"].as<size_t>();
+    uint64_t numOrders = result["num-orders"].as<uint64_t>();
 
-    std::list<Order> orders = OrdersGenerator::generateOrdersToFile(ordersFile, NUM_ORDERS);
+    OrderBook orderBook(numOrders);
+    RingBuffer buffer(bufferSize);
 
-    auto start = std::chrono::high_resolution_clock::now();
+    std::atomic<bool> running = true;
 
-    // Add orders to the order book
-    for (auto& order : orders) {
-        order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    Engine engine(buffer, running, orderBook, numOrders);
+    engine.start();
 
-        while (buffer.push(order) != 0) {
-            continue;
-        }
+    Gateway gateway;
+    gateway.run(buffer, running, numOrders);
 
-        /**
-         * Wait as in a real-life scenario
-         * If no wait, the throughput is bigger, but the buffer gets flooded and the latency is very high
-         */
-        auto start_wait = std::chrono::high_resolution_clock::now();
-        while (std::chrono::high_resolution_clock::now() - start_wait < std::chrono::nanoseconds(250));
-    }
-
-    running.store(false, std::memory_order_release);
-    engine_thread.join();
-
-    auto end = std::chrono::high_resolution_clock::now();
+    engine.stop();
+    engine.printStats();
 
     // Print current orders
-    orderBook.printOrders(argv[2]);
-
-    std::chrono::duration<double> diff = end - start;
-    double throughput = NUM_ORDERS / diff.count();
-
-    std::cout << "Processed " << NUM_ORDERS << " orders in " << diff.count() << " seconds.\n";
-    std::cout << "Throughput: " << throughput << " orders/second. \n";
-
-    std::sort(latencies.begin(), latencies.end());
-
-    double median = latencies[NUM_ORDERS * 0.5];
-    double p99 = latencies[NUM_ORDERS * 0.99];
-    double p99_9 = latencies[NUM_ORDERS * 0.999];
-
-    std::cout << "Median Latency:  " << median << " ns\n";
-    std::cout << "99% Latency:     " << p99 << " ns\n";
-    std::cout << "99.9% Latency:   " << p99_9 << " ns\n";
+    std::string filename = result["output"].as<std::string>();
+    orderBook.printOrders(filename);
 
     return 0;
 }
