@@ -144,6 +144,14 @@ void OrderBook::matchOrders() {
 }
 
 uint32_t OrderBook::processOrder(Order& incoming) {
+    if (incoming.type == OrderType::MARKET) {
+        incoming.price = incoming.side == Side::BUY ? numOrders - 1 : 0;
+    }
+
+    if (incoming.price >= numOrders) {
+        return incoming.quantity;
+    }
+
     while (incoming.quantity > 0) {
         if (incoming.side == Side::BUY) {
             if (activeAsksCount == 0) break;
@@ -284,4 +292,30 @@ void OrderBook::printOrder(const Order *order, std::ostream& outFile) {
 
     outFile << "ID: " << order->id << ", Price: " << order->price << ", Quantity: " << order->quantity
             << ", Type: " << type << "\n";
+}
+
+uint32_t OrderBook::getLevelQuantity(uint64_t price, Side side) {
+    uint32_t num_of_orders = 0;
+    Order *curr;
+
+    if (side == Side::BUY) {
+        if (price >= bidOrders.size() || bidOrders[price].head == nullptr) {
+            return 0;
+        }
+
+        curr = bidOrders[price].head;
+    } else {
+        if (price >= askOrders.size() || askOrders[price].head == nullptr) {
+            return 0;
+        }
+
+        curr = askOrders[price].head;
+    }
+
+    while (curr) {
+        num_of_orders += curr->quantity;
+        curr = curr->next;
+    }
+
+    return num_of_orders;
 }

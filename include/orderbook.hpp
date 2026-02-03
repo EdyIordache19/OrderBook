@@ -36,4 +36,16 @@ public:
     bool canFill(Order& order);
     void printOrders(std::string filename);
     void printOrder(const Order *order, std::ostream& outFile);
+
+    uint32_t getLevelQuantity(uint64_t price, Side side);
+
+    uint64_t getMaxBid() {
+        return maxBid;
+    }
+    uint64_t getMinAsk() {
+        return minAsk;
+    }
+    bool isEmpty() {
+        return activeAsksCount == 0 && activeBidsCount == 0;
+    }
 };

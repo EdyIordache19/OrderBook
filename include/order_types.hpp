@@ -36,7 +36,18 @@ struct alignas(64) Order {
 
     Order *next = nullptr;
     Order *prev = nullptr;
+
+    Order() { }
+
+    Order(uint64_t _id, uint64_t _price, uint32_t _quantity, Side _side, OrderType _type) :
+        id(_id),
+        price(_price),
+        quantity(_quantity),
+        side(_side),
+        type(_type)
+            { }
 };
+
 
 struct Level {
     // First order (highest priority)
