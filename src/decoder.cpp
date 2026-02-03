@@ -23,6 +23,8 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
         } else {
             order.price = 0;
         }
+    } else if (message->type == 2) {
+        order.type = OrderType::CANCEL;
     } else {
         order.type = OrderType::KILL;
     }

@@ -17,6 +17,9 @@ void Engine::runLoop() {
             if (order.type == OrderType::KILL) {
                 orderBook.addOrder(order);
                 break;
+            } else if (order.type == OrderType::CANCEL) {
+                orderBook.removeOrder(order.id);
+                continue;
             }
 
             if (order.tif == TimeInForce::IOC) {

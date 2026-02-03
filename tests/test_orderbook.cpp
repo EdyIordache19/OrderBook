@@ -240,3 +240,100 @@ TEST_F(OrderBookTest, MarketOrderGap) {
     // Market orders that don't fill are cancelled (not added to book)
     ASSERT_EQ(book.getLevelQuantity(99999, Side::BUY), 0);
 }
+
+// 17. Basic Cancel - Verify order is removed
+TEST_F(OrderBookTest, Cancel_Basic) {
+    // Add Sell: ID 1, 10 @ 100
+    Order sell(1, 100, 10, Side::SELL, OrderType::LIMIT);
+    book.addOrder(sell);
+
+    // Verify presence
+    ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 10);
+
+    // Cancel ID 1
+    book.removeOrder(1);
+
+    // Verify order is removed and book is empty
+    ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0);
+    ASSERT_TRUE(book.isEmpty());
+}
+
+// 18. Cancel Head of List (Maintenance of pointers)
+TEST_F(OrderBookTest, Cancel_HeadOfList) {
+    // Add two orders at same price
+    Order b1 = Order(1, 100, 10, Side::BUY, OrderType::LIMIT);
+    Order b2 = Order(2, 100, 20, Side::BUY, OrderType::LIMIT);
+    book.addOrder(b1); // Head
+    book.addOrder(b2); // Tail
+
+    // Cancel Head (ID 1)
+    book.removeOrder(1);
+
+    // Total quantity should be 20 (only ID 2 remains)
+    ASSERT_EQ(book.getLevelQuantity(100, Side::BUY), 20);
+
+    // Verify matching still works against the remaining order (ID 2)
+    Order sell(3, 100, 20, Side::SELL, OrderType::LIMIT);
+    uint32_t remaining = book.processOrder(sell);
+
+    ASSERT_EQ(remaining, 0);
+    ASSERT_EQ(book.getLevelQuantity(100, Side::BUY), 0);
+}
+
+// 19. Cancel Tail of List
+TEST_F(OrderBookTest, Cancel_TailOfList) {
+    Order b1 = Order(1, 100, 10, Side::BUY, OrderType::LIMIT);
+    Order b2 = Order(2, 100, 20, Side::BUY, OrderType::LIMIT);
+    book.addOrder(b1);
+    book.addOrder(b2);
+
+    // Cancel Tail (ID 2)
+    book.removeOrder(2);
+
+    ASSERT_EQ(book.getLevelQuantity(100, Side::BUY), 10);
+
+    // Match remaining to ensure head is still valid
+    Order sell(3, 100, 10, Side::SELL, OrderType::LIMIT);
+    uint32_t remaining = book.processOrder(sell);
+    ASSERT_EQ(remaining, 0);
+}
+
+// 20. Cancel Middle of List
+TEST_F(OrderBookTest, Cancel_MiddleOfList) {
+    Order b1 = Order(1, 100, 10, Side::BUY, OrderType::LIMIT);
+    Order b2 = Order(2, 100, 10, Side::BUY, OrderType::LIMIT);
+    Order b3 = Order(3, 100, 10, Side::BUY, OrderType::LIMIT);
+    book.addOrder(b1); // Head
+    book.addOrder(b2); // Middle
+    book.addOrder(b3); // Tail
+
+    // Cancel Middle (ID 2)
+    book.removeOrder(2);
+
+    // Should have 20 left (10 + 10)
+    ASSERT_EQ(book.getLevelQuantity(100, Side::BUY), 20);
+
+    // Verify Chain: If we match 20, it should consume ID 1 and ID 3
+    Order sell(4, 100, 25, Side::SELL, OrderType::LIMIT);
+    uint32_t remaining = book.processOrder(sell);
+
+    ASSERT_EQ(remaining, 5); // 25 - 10 - 10 = 5
+}
+
+// 21. Double Cancel (Idempotency)
+// Cancelling an already cancelled order should not crash or corrupt state
+TEST_F(OrderBookTest, Cancel_DoubleCancel) {
+    Order sell = Order(1, 100, 10, Side::SELL, OrderType::LIMIT);
+    book.addOrder(sell);
+
+    book.removeOrder(1); // First cancel
+    book.removeOrder(1); // Second cancel (should be ignored)
+
+    ASSERT_TRUE(true); // Verifies no Segfault occurred
+}
+
+// 22. Cancel Non-Existent ID
+TEST_F(OrderBookTest, Cancel_NonExistent) {
+    book.removeOrder(99999); // ID never existed, should be ignored
+    ASSERT_TRUE(true);
+}

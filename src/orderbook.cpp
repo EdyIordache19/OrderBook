@@ -61,6 +61,12 @@ void OrderBook::removeOrder(uint64_t orderId) {
         book[orderToRemove->price].tail = orderToRemove->prev;
     }
 
+    if (orderToRemove->side == Side::BUY) {
+        activeBidsCount--;
+    } else {
+        activeAsksCount--;
+    }
+
     orderLookup[orderId] = nullptr;
     ordersPool.deallocateOrder(orderToRemove);
 }

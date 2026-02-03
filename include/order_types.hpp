@@ -5,6 +5,7 @@
 enum OrderType : uint8_t {
     LIMIT = 0,
     MARKET = 1,
+    CANCEL = 2,
     KILL = 99
 };
 
