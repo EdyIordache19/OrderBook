@@ -42,3 +42,6 @@
 
 # output and input files
 *.txt
+
+# build artifacts
+build/
