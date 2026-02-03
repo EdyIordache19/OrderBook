@@ -153,12 +153,12 @@ tests/clean: _deps/googletest-build/clean
 CMakeFiles/orderbook.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/edi/Desktop/Orderbook/build/CMakeFiles --progress-num=11,12,13,14,15,16,17,18 "Built target orderbook"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/edi/Desktop/Orderbook/build/CMakeFiles --progress-num=11,12,13,14,15,16,17,18,19 "Built target orderbook"
 .PHONY : CMakeFiles/orderbook.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/orderbook.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/edi/Desktop/Orderbook/build/CMakeFiles 8
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/edi/Desktop/Orderbook/build/CMakeFiles 9
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/orderbook.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/edi/Desktop/Orderbook/build/CMakeFiles 0
 .PHONY : CMakeFiles/orderbook.dir/rule
@@ -206,7 +206,7 @@ tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFile
 tests/CMakeFiles/unit_tests.dir/all: _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/all
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/depend
 	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/edi/Desktop/Orderbook/build/CMakeFiles --progress-num=19,20,21,22,23 "Built target unit_tests"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/edi/Desktop/Orderbook/build/CMakeFiles --progress-num=20,21,22,23,24 "Built target unit_tests"
 .PHONY : tests/CMakeFiles/unit_tests.dir/all
 
 # Build rule for subdir invocation for target.

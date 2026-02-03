@@ -1,6 +1,7 @@
 #include "gateway.hpp"
 #include "orderbook.hpp"
 #include "main.hpp"
+#include "decoder.hpp"
 
 #include <stdlib.h>
 #include <iostream>
@@ -56,64 +57,25 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t 
             start = std::chrono::high_resolution_clock::now();
         }
 
-        if (n_bytes < sizeof(WireMessage)) {
-            continue;
-        }
-
-        WireMessage message = *(WireMessage *)buffer;
-        // std::cout << "Id of received order: " << message.id << "\n";
-
         Order order;
+        if (Decoder::decode(buffer, n_bytes, order, 99999)) {
+            while (ring_buffer.push(order) != 0);
 
-        // Copy to order
-        order.id = message.id;
-        order.price = message.price;
-        order.quantity = message.quantity;
+            orders_received++;
+            if (order.type == OrderType::KILL) {
+                std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
+                running.store(false, std::memory_order_release);
 
-        if (message.side == 'B') order.side = Side::BUY;
-        else order.side = Side::SELL;
+                auto end = std::chrono::high_resolution_clock::now();
 
-        if (message.type == 0) order.type = OrderType::LIMIT;
-        else if (message.type == 1) {
-            order.type = OrderType::MARKET;
-            if (order.side == Side::BUY) {
-                order.price = numOrders - 1;
-            } else {
-                order.price = 0;
+                std::chrono::duration<double> diff = end - start;
+                double throughput = numOrders / diff.count();
+
+                std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
+                std::cout << "Throughput: " << throughput << " orders/second. \n";
+
+                break;
             }
-        } else {
-            order.type = OrderType::KILL;
-        }
-
-        switch (message.tif) {
-            case 0:
-                order.tif = TimeInForce::GTC;
-                break;
-            case 1:
-                order.tif = TimeInForce::IOC;
-                break;
-            case 2:
-                order.tif = TimeInForce::FOK;
-                break;
-        }
-
-        order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-        while (ring_buffer.push(order) != 0);
-
-        orders_received++;
-        if (message.type == 99) {
-            std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
-            running.store(false, std::memory_order_release);
-
-            auto end = std::chrono::high_resolution_clock::now();
-
-            std::chrono::duration<double> diff = end - start;
-            double throughput = numOrders / diff.count();
-
-            std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
-            std::cout << "Throughput: " << throughput << " orders/second. \n";
-
-            break;
         }
     }
 

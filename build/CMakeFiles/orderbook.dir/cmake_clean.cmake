@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/orderbook.dir/src/decoder.cpp.o"
+  "CMakeFiles/orderbook.dir/src/decoder.cpp.o.d"
   "CMakeFiles/orderbook.dir/src/engine.cpp.o"
   "CMakeFiles/orderbook.dir/src/engine.cpp.o.d"
   "CMakeFiles/orderbook.dir/src/gateway.cpp.o"

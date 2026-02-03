@@ -7,15 +7,15 @@
 #define PORT 1234
 #define MAXLINE 1024
 
-struct WireMessage {
-    uint64_t id;
-    uint64_t price;
-    uint32_t quantity;
+// struct WireMessage {
+//     uint64_t id;
+//     uint64_t price;
+//     uint32_t quantity;
 
-    char side;
-    uint8_t type;
-    uint8_t tif;
-};
+//     char side;
+//     uint8_t type;
+//     uint8_t tif;
+// };
 
 class Gateway {
 public:

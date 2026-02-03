@@ -276,6 +276,30 @@ src/client/client.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client/client.cpp.s
 .PHONY : src/client/client.cpp.s
 
+src/decoder.o: src/decoder.cpp.o
+.PHONY : src/decoder.o
+
+# target to build an object file
+src/decoder.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/src/decoder.cpp.o
+.PHONY : src/decoder.cpp.o
+
+src/decoder.i: src/decoder.cpp.i
+.PHONY : src/decoder.i
+
+# target to preprocess a source file
+src/decoder.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/src/decoder.cpp.i
+.PHONY : src/decoder.cpp.i
+
+src/decoder.s: src/decoder.cpp.s
+.PHONY : src/decoder.s
+
+# target to generate assembly for a file
+src/decoder.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/src/decoder.cpp.s
+.PHONY : src/decoder.cpp.s
+
 src/engine.o: src/engine.cpp.o
 .PHONY : src/engine.o
 
@@ -466,6 +490,9 @@ help:
 	@echo "... src/client/client.o"
 	@echo "... src/client/client.i"
 	@echo "... src/client/client.s"
+	@echo "... src/decoder.o"
+	@echo "... src/decoder.i"
+	@echo "... src/decoder.s"
 	@echo "... src/engine.o"
 	@echo "... src/engine.i"
 	@echo "... src/engine.s"

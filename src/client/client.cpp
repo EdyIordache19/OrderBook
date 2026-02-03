@@ -8,6 +8,7 @@
 
 #include "../include/orderbook.hpp"
 #include "../include/order_types.hpp"
+#include "../include/decoder.hpp"
 #include "../include/gateway.hpp"
 
 #include "../include/cxxopts.hpp"
