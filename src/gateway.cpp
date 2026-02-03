@@ -58,7 +58,7 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t 
         }
 
         Order order;
-        if (Decoder::decode(buffer, n_bytes, order, 99999)) {
+        if (Decoder::decode(buffer, n_bytes, order, numOrders)) {
             while (ring_buffer.push(order) != 0);
 
             orders_received++;

@@ -3,6 +3,7 @@
 
 CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/client/client.cpp \
   /home/edi/Desktop/Orderbook/include/cxxopts.hpp \
+  /home/edi/Desktop/Orderbook/include/decoder.hpp \
   /home/edi/Desktop/Orderbook/include/gateway.hpp \
   /home/edi/Desktop/Orderbook/include/order_types.hpp \
   /home/edi/Desktop/Orderbook/include/orderbook.hpp \
@@ -138,6 +139,7 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
   /usr/include/c++/13/bitset \
   /usr/include/c++/13/cctype \
   /usr/include/c++/13/cerrno \
+  /usr/include/c++/13/chrono \
   /usr/include/c++/13/clocale \
   /usr/include/c++/13/codecvt \
   /usr/include/c++/13/cstddef \
@@ -439,6 +441,14 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 
 /usr/include/x86_64-linux-gnu/bits/stdio_lim.h:
 
+/usr/include/x86_64-linux-gnu/bits/stdio.h:
+
+/usr/include/x86_64-linux-gnu/c++/13/bits/gthr-default.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
+
+/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
+
 /usr/include/c++/13/bits/streambuf.tcc:
 
 /usr/include/c++/13/bits/stl_map.h:
@@ -480,10 +490,6 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 /usr/include/c++/13/bits/stl_list.h:
 
 /usr/include/c++/13/bits/erase_if.h:
-
-/usr/include/c++/13/bits/stringfwd.h:
-
-/usr/include/c++/13/bits/stl_stack.h:
 
 /usr/include/c++/13/bits/shared_ptr.h:
 
@@ -575,13 +581,19 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 
 /usr/include/c++/13/bits/fs_ops.h:
 
+/usr/include/c++/13/clocale:
+
 /usr/include/c++/13/bits/atomic_lockfree_defines.h:
 
 /usr/include/x86_64-linux-gnu/asm/errno.h:
 
-/usr/include/c++/13/bits/uniform_int_dist.h:
+/usr/include/c++/13/bits/stringfwd.h:
+
+/usr/include/c++/13/bits/stl_stack.h:
 
 /usr/include/c++/13/bits/locale_classes.tcc:
+
+/usr/include/c++/13/bits/uniform_int_dist.h:
 
 /usr/include/c++/13/bits/regex.h:
 
@@ -594,8 +606,6 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 /usr/include/c++/13/bits/range_access.h:
 
 /usr/include/c++/13/system_error:
-
-/usr/include/c++/13/clocale:
 
 /usr/include/c++/13/bits/basic_ios.tcc:
 
@@ -673,17 +683,17 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 
 /usr/include/c++/13/bits/chrono.h:
 
-/usr/include/asm-generic/socket.h:
-
-/usr/include/c++/13/bits/refwrap.h:
-
-/usr/include/c++/13/bits/fstream.tcc:
+/usr/include/c++/13/bits/ostream_insert.h:
 
 /usr/include/c++/13/bits/stl_raw_storage_iter.h:
 
 /usr/include/c++/13/algorithm:
 
-/usr/include/c++/13/bits/ostream_insert.h:
+/usr/include/asm-generic/socket.h:
+
+/usr/include/c++/13/bits/refwrap.h:
+
+/usr/include/c++/13/bits/fstream.tcc:
 
 /usr/include/c++/13/bits/basic_ios.h:
 
@@ -694,12 +704,6 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 /usr/include/c++/13/bits/regex_automaton.tcc:
 
 /usr/include/unistd.h:
-
-/usr/include/x86_64-linux-gnu/c++/13/bits/gthr-default.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
 
 /usr/include/c++/13/backward/auto_ptr.h:
 
@@ -837,6 +841,8 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 
 /usr/include/x86_64-linux-gnu/bits/stdint-least.h:
 
+/usr/include/c++/13/chrono:
+
 /usr/include/c++/13/codecvt:
 
 /usr/include/c++/13/ctime:
@@ -969,13 +975,13 @@ CMakeFiles/client.dir/src/client/client.cpp.o: /home/edi/Desktop/Orderbook/src/c
 
 /usr/include/x86_64-linux-gnu/sys/select.h:
 
+/home/edi/Desktop/Orderbook/include/decoder.hpp:
+
 /usr/include/c++/13/cwchar:
 
 /usr/include/x86_64-linux-gnu/asm/socket.h:
 
 /usr/include/string.h:
-
-/usr/include/x86_64-linux-gnu/bits/stdio.h:
 
 /usr/include/c++/13/cwctype:
 

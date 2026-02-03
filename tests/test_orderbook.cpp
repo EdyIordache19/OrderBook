@@ -5,7 +5,7 @@
 // Fixture class to initialize OrderBook for every test
 class OrderBookTest : public ::testing::Test {
 protected:
-    // Initialize with 1M orders support
+    // Initialize with 100k orders support
     OrderBook book;
     OrderBookTest() : book(100000) {}
 };
@@ -146,8 +146,7 @@ TEST_F(OrderBookTest, FOK_Reject) {
     fok.tif = TimeInForce::FOK;
 
     ASSERT_FALSE(book.canFill(fok));
-    // Engine should NOT call processOrder if canFill is false,
-    // or processOrder should return full qty without matching.
+    // Note: Engine logic handles skipping processOrder if canFill is false
 }
 
 // 10. IOC (Immediate Or Cancel)
@@ -164,7 +163,7 @@ TEST_F(OrderBookTest, IOC_PartialFill) {
     ASSERT_EQ(remaining, 40);
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0);
 
-    // Crucial: Engine does NOT add remaining 40 to book
+    // Remaining IOC quantity is not added to book
     ASSERT_EQ(book.getLevelQuantity(100, Side::BUY), 0);
 }
 
@@ -176,17 +175,10 @@ TEST_F(OrderBookTest, TimePriority) {
     book.addOrder(s1);
     book.addOrder(s2);
 
-    // Buy 10
+    // Buy 10 - Should execute against s1 (First In)
     Order buy(3, 100, 10, Side::BUY, OrderType::LIMIT);
     book.processOrder(buy);
 
-    // Should have executed against s1 (ID 1)
-    // Assuming your OrderBook removes head:
-    // We can't easily check ID without a getter for the list,
-    // but we can check the queue logic if we had access.
-    // Generally, s1 should be gone, s2 remains.
-
-    // For now, just check quantity decreased correctly
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 10);
 }
 
@@ -201,7 +193,7 @@ TEST_F(OrderBookTest, EmptyBook_NoCrash) {
 }
 
 // 13. Zero Quantity Attack
-// Does the engine reject orders with 0 quantity?
+// Verify engine rejects orders with 0 quantity
 TEST_F(OrderBookTest, ZeroQuantityReject) {
     Order buy(1, 100, 0, Side::BUY, OrderType::LIMIT);
     uint32_t remaining = book.processOrder(buy);
@@ -212,31 +204,26 @@ TEST_F(OrderBookTest, ZeroQuantityReject) {
 }
 
 // 14. Out of Bounds Price (Segfault Prevention)
-// If I send price 9999999, does it crash?
 TEST_F(OrderBookTest, OutOfBoundsPrice) {
-    // Assuming book was init with 1,000,000
+    // Assuming book was init with 100,000. Use value > 100,000
     uint64_t badPrice = 2000000;
     Order buy(1, badPrice, 10, Side::BUY, OrderType::LIMIT);
 
-    // Should ideally reject or return full quantity
-    // This verifies your "if (price >= numOrders)" check
+    // Verifies bounds check
     book.processOrder(buy);
 
-    // Should NOT be in the book (would crash if it tried to access vector[2000000])
-    // Since we can't easily check 'getLevelQuantity' for invalid index, just ensure no crash.
+    // Should not add to book or crash
+    ASSERT_EQ(book.getLevelQuantity(badPrice, Side::BUY), 0);
 }
 
 // 15. Self-Matching (Wash Trading)
-// If the same order ID executes against itself (logic error check)
 TEST_F(OrderBookTest, NoSelfMatch) {
-    // This is hard to test unless your addOrder checks IDs.
-    // But we can check if cancelling a phantom order crashes.
+    // Check if cancelling a phantom order crashes
     book.removeOrder(9999); // ID that doesn't exist
     ASSERT_TRUE(true); // Just reaching here without crash is success
 }
 
 // 16. Market Order Liquidity Gap (Partial Fill)
-// Market Buy 50, but only 10 on sale.
 TEST_F(OrderBookTest, MarketOrderGap) {
     // Sell 10 @ 100
     Order sell = Order(1, 100, 10, Side::SELL, OrderType::LIMIT);
@@ -250,8 +237,6 @@ TEST_F(OrderBookTest, MarketOrderGap) {
     ASSERT_EQ(remaining, 40);
     ASSERT_EQ(book.getLevelQuantity(100, Side::BUY), 0);
 
-    // CRITICAL: Ensure the remaining 40 Market Order is NOT added to the book at price MAX!
-    // Market orders that don't fill usually Cancel or become Limit at Touch.
-    // Your engine logic dictates this. If you don't add it, book should be empty.
-    ASSERT_EQ(book.getLevelQuantity(999999, Side::BUY), 0);
+    // Market orders that don't fill are cancelled (not added to book)
+    ASSERT_EQ(book.getLevelQuantity(99999, Side::BUY), 0);
 }

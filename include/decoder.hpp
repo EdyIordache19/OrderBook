@@ -5,7 +5,7 @@
 #include <cstring>
 #include <chrono>
 
-struct WireMessage {
+struct __attribute__((packed)) WireMessage {
     uint64_t id;
     uint64_t price;
     uint32_t quantity;
