@@ -37,23 +37,48 @@ int main(int argc, char* argv[]) {
     size_t bufferSize = result["buffer-size"].as<size_t>();
     uint64_t numOrders = result["num-orders"].as<uint64_t>();
 
-    OrderBook orderBook(numOrders);
-    RingBuffer buffer(bufferSize);
+    RingBuffer<Order> ordersBuffer(bufferSize);
+    RingBuffer<Trade> matchBuffer(bufferSize);
+    OrderBook orderBook(numOrders, matchBuffer);
 
     std::atomic<bool> running = true;
 
-    Engine engine(buffer, running, orderBook, numOrders);
-    engine.start();
+    Engine engine(ordersBuffer, running, orderBook, numOrders);
+    Gateway gateway(ordersBuffer, running, numOrders);
 
-    Gateway gateway;
-    gateway.run(buffer, running, numOrders);
+    std::thread t_engine(&Engine::run, &engine);
+    // std::thread t_gateway(&Gateway::run, &gateway);
 
-    engine.stop();
+    gateway.run();
+
+    // std::thread t_reporter([&]() {
+    //     Trade t;
+    //     while (running) {
+    //         while (matchBuffer.pop(t)) {
+    //             std::cout << t.price << " ";
+    //         }
+
+    //         std::this_thread::yield();
+    //     }
+    // });
+
+    running = false;
+
+    // t_gateway.join();
+    t_engine.join();
+    // t_reporter.join();
+
+    // engine.stop();
     engine.printStats();
 
     // Print current orders
     std::string filename = result["output"].as<std::string>();
     orderBook.printOrders(filename);
+
+    Trade t;
+    while (matchBuffer.pop(t)) {
+        std::cout << t.maker_id << std::endl;
+    }
 
     return 0;
 }

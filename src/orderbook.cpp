@@ -1,7 +1,8 @@
 #include "orderbook.hpp"
 
-OrderBook::OrderBook(uint64_t numOfOrders)
-    : numOrders(numOfOrders) {
+OrderBook::OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer)
+    : numOrders(numOfOrders),
+      matchBuffer(_matchBuffer) {
     bidOrders.resize(numOfOrders);
     askOrders.resize(numOfOrders);
 
@@ -186,6 +187,15 @@ uint32_t OrderBook::processOrder(Order& incoming) {
 
         incoming.quantity -= tradeQuantity;
         order->quantity -= tradeQuantity;
+
+        Trade trade;
+        trade.maker_id = incoming.id;
+        trade.taker_id = order->id;
+        trade.quantity = tradeQuantity;
+        trade.price = incoming.price;
+        trade.timestamp = incoming.timestamp;
+
+        matchBuffer.push(trade);
 
         if (order->quantity == 0) {
             level.head = order->next;

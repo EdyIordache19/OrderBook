@@ -15,7 +15,6 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/edi/Desktop/Orderbook/src/orderbook.cpp" "CMakeFiles/orderbook.dir/src/orderbook.cpp.o" "gcc" "CMakeFiles/orderbook.dir/src/orderbook.cpp.o.d"
   "/home/edi/Desktop/Orderbook/src/orders_generator.cpp" "CMakeFiles/orderbook.dir/src/orders_generator.cpp.o" "gcc" "CMakeFiles/orderbook.dir/src/orders_generator.cpp.o.d"
   "/home/edi/Desktop/Orderbook/src/orders_pool.cpp" "CMakeFiles/orderbook.dir/src/orders_pool.cpp.o" "gcc" "CMakeFiles/orderbook.dir/src/orders_pool.cpp.o.d"
-  "/home/edi/Desktop/Orderbook/src/ring_buffer.cpp" "CMakeFiles/orderbook.dir/src/ring_buffer.cpp.o" "gcc" "CMakeFiles/orderbook.dir/src/ring_buffer.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

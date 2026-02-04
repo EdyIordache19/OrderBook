@@ -2,6 +2,7 @@
 
 #include "order_types.hpp"
 #include "orders_pool.hpp"
+#include "ring_buffer.hpp"
 
 #include <vector>
 #include <cstdint>
@@ -20,6 +21,7 @@ private:
     std::vector<Level> bidOrders;
 
     std::vector<Order*> orderLookup;
+    RingBuffer<Trade>& matchBuffer;
 
     uint32_t activeBidsCount = 0;
     uint32_t activeAsksCount = 0;
@@ -27,7 +29,7 @@ private:
     uint64_t maxBid = 0;
     uint64_t minAsk = 9999999;
 public:
-    OrderBook(uint64_t numOfOrders);
+    OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer);
     void addOrder(Order& order);
     void removeOrder(uint64_t orderId);
     void removeOrder(Order *orderToRemove);

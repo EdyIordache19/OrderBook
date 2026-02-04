@@ -7,7 +7,10 @@ class OrderBookTest : public ::testing::Test {
 protected:
     // Initialize with 100k orders support
     OrderBook book;
-    OrderBookTest() : book(100000) {}
+    RingBuffer<Trade> matchBuffer;
+    OrderBookTest()
+        : matchBuffer(1 << 16),
+          book(100000, matchBuffer) {}
 };
 
 // 1. Basic Add - Verify orders sit in the book

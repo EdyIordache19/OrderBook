@@ -21,8 +21,11 @@ enum Side : uint8_t {
 };
 
 struct Trade {
+    uint64_t maker_id;
+    uint64_t taker_id;
     uint64_t price;
     uint32_t quantity;
+    uint64_t timestamp;
 };
 
 struct alignas(64) Order {

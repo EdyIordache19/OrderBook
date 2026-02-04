@@ -11,15 +11,13 @@
 class Engine {
 private:
     OrderBook& orderBook;
-    RingBuffer& ringBuffer;
+    RingBuffer<Order>& ordersBuffer;
     std::atomic<bool>& running;
     std::thread engineThread;
     std::vector<uint64_t> latencies;
-
-    void runLoop();
 public:
-    Engine(RingBuffer& buffer, std::atomic<bool>& isRunning, OrderBook& book, uint64_t numOrders);
-    void start();
+    Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& orderBook, uint64_t numOrders);
+    void run();
     void stop();
     void printStats();
 };

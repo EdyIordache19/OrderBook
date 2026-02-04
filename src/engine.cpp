@@ -1,19 +1,19 @@
 #include "engine.hpp"
 #include "main.hpp"
 
-Engine::Engine(RingBuffer& buffer, std::atomic<bool>& isRunning, OrderBook& book, uint64_t numOrders)
-    : ringBuffer(buffer),
-      running(isRunning),
-      orderBook(book)
+Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& _orderBook, uint64_t numOrders)
+    : ordersBuffer(_ordersBuffer),
+      running(_running),
+      orderBook(_orderBook)
 {
     latencies.reserve(numOrders);
 }
 
-void Engine::runLoop() {
+void Engine::run() {
     pin_thread_to_core(1);
-    while (running.load(std::memory_order_acquire) || !ringBuffer.is_empty()) {
+    while (running.load(std::memory_order_acquire) || !ordersBuffer.is_empty()) {
         Order order;
-        if (!ringBuffer.pop(order)) {
+        if (!ordersBuffer.pop(order)) {
             if (order.type == OrderType::KILL) {
                 orderBook.addOrder(order);
                 break;
@@ -44,11 +44,6 @@ void Engine::runLoop() {
             continue;
         }
     }
-}
-
-void Engine::start() {
-    running = true;
-    engineThread = std::thread(&Engine::runLoop, this);
 }
 
 void Engine::stop() {

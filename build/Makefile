@@ -444,30 +444,6 @@ src/orders_pool.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/src/orders_pool.cpp.s
 .PHONY : src/orders_pool.cpp.s
 
-src/ring_buffer.o: src/ring_buffer.cpp.o
-.PHONY : src/ring_buffer.o
-
-# target to build an object file
-src/ring_buffer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/src/ring_buffer.cpp.o
-.PHONY : src/ring_buffer.cpp.o
-
-src/ring_buffer.i: src/ring_buffer.cpp.i
-.PHONY : src/ring_buffer.i
-
-# target to preprocess a source file
-src/ring_buffer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/src/ring_buffer.cpp.i
-.PHONY : src/ring_buffer.cpp.i
-
-src/ring_buffer.s: src/ring_buffer.cpp.s
-.PHONY : src/ring_buffer.s
-
-# target to generate assembly for a file
-src/ring_buffer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/orderbook.dir/build.make CMakeFiles/orderbook.dir/src/ring_buffer.cpp.s
-.PHONY : src/ring_buffer.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -511,9 +487,6 @@ help:
 	@echo "... src/orders_pool.o"
 	@echo "... src/orders_pool.i"
 	@echo "... src/orders_pool.s"
-	@echo "... src/ring_buffer.o"
-	@echo "... src/ring_buffer.i"
-	@echo "... src/ring_buffer.s"
 .PHONY : help
 
 

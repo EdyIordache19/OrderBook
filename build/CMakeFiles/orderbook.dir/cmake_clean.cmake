@@ -13,8 +13,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/orderbook.dir/src/orders_generator.cpp.o.d"
   "CMakeFiles/orderbook.dir/src/orders_pool.cpp.o"
   "CMakeFiles/orderbook.dir/src/orders_pool.cpp.o.d"
-  "CMakeFiles/orderbook.dir/src/ring_buffer.cpp.o"
-  "CMakeFiles/orderbook.dir/src/ring_buffer.cpp.o.d"
   "orderbook"
   "orderbook.pdb"
 )

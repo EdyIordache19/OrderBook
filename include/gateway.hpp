@@ -8,6 +8,12 @@
 #define MAXLINE 1024
 
 class Gateway {
+private:
+    RingBuffer<Order>& ordersBuffer;
+    std::atomic<bool>& running;
+    uint64_t numOrders;
+
 public:
-    void run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t numOrders);
+    Gateway(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, uint64_t _numOrders);
+    void run();
 };

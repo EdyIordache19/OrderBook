@@ -15,7 +15,13 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
-void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t numOrders) {
+Gateway::Gateway(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, uint64_t _numOrders)
+    : ordersBuffer(_ordersBuffer),
+      running(_running),
+      numOrders(_numOrders)
+    { }
+
+void Gateway::run() {
     pin_thread_to_core(2);
 
     int sockfd;
@@ -52,14 +58,14 @@ void Gateway::run(RingBuffer& ring_buffer, std::atomic<bool>& running, uint64_t 
     while (running) {
         socklen_t len = sizeof(serv_addr);
         long unsigned int n_bytes = recvfrom(sockfd, (char *)buffer, MAXLINE,
-                    MSG_WAITALL, (struct sockaddr *)&serv_addr, &len);
+                    0, (struct sockaddr *)&serv_addr, &len);
         if (orders_received == 0) {
             start = std::chrono::high_resolution_clock::now();
         }
 
         Order order;
         if (Decoder::decode(buffer, n_bytes, order, numOrders)) {
-            while (ring_buffer.push(order) != 0);
+            while (ordersBuffer.push(order) != 0);
 
             orders_received++;
             if (order.type == OrderType::KILL) {

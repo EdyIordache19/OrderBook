@@ -1,38 +1,38 @@
-#include "ring_buffer.hpp"
+// #include "ring_buffer.hpp"
 
-#include <iostream>
+// #include <iostream>
 
-RingBuffer::RingBuffer(size_t buff_size) {
-    this->buff_size = buff_size;
-    buffer.resize(buff_size);
-    tail = 0;
-    head = 0;
-}
+// RingBuffer<Order>::RingBuffer(size_t buff_size) {
+//     this->buff_size = buff_size;
+//     buffer.resize(buff_size);
+//     tail = 0;
+//     head = 0;
+// }
 
-int RingBuffer::push(const Order& order) {
-    if (tail - head.load(std::memory_order_acquire) >= buff_size) {
-        return 1;
-    }
+// int RingBuffer<Order>::push(const Order& order) {
+//     if (tail - head.load(std::memory_order_acquire) >= buff_size) {
+//         return 1;
+//     }
 
-    std::atomic<size_t> slot = tail & (buff_size - 1);
-    buffer[slot] = order;
+//     std::atomic<size_t> slot = tail & (buff_size - 1);
+//     buffer[slot] = order;
 
-    tail.store(tail + 1, std::memory_order_release);
-    return 0;
-}
+//     tail.store(tail + 1, std::memory_order_release);
+//     return 0;
+// }
 
-int RingBuffer::pop(Order& order) {
-    if (tail.load(std::memory_order_acquire) == head) {
-        return 1;
-    }
+// int RingBuffer<Order>::pop(Order& order) {
+//     if (tail.load(std::memory_order_acquire) == head) {
+//         return 1;
+//     }
 
-    std::atomic<size_t> slot = head & (buff_size - 1);
-    order = buffer[slot];
+//     std::atomic<size_t> slot = head & (buff_size - 1);
+//     order = buffer[slot];
 
-    head.store(head + 1, std::memory_order_release);
-    return 0;
-}
+//     head.store(head + 1, std::memory_order_release);
+//     return 0;
+// }
 
-bool RingBuffer::is_empty() {
-    return tail == head;
-}
+// bool RingBuffer<Order>::is_empty() {
+//     return tail == head;
+// }
