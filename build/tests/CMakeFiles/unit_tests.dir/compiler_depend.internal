@@ -407,10 +407,6 @@ tests/CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.o
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
 
-tests/CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.o
- /home/edi/Desktop/Orderbook/src/ring_buffer.cpp
- /usr/include/stdc-predef.h
-
 tests/CMakeFiles/unit_tests.dir/test_orderbook.cpp.o
  /home/edi/Desktop/Orderbook/tests/test_orderbook.cpp
  /home/edi/Desktop/Orderbook/build/_deps/googletest-src/googletest/include/gtest/gtest-assertion-result.h

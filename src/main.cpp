@@ -4,6 +4,7 @@
 #include "ring_buffer.hpp"
 #include "gateway.hpp"
 #include "engine.hpp"
+#include "publisher.hpp"
 
 #include <cxxopts.hpp>
 
@@ -37,6 +38,9 @@ int main(int argc, char* argv[]) {
     size_t bufferSize = result["buffer-size"].as<size_t>();
     uint64_t numOrders = result["num-orders"].as<uint64_t>();
 
+    std::string filename = result["output"].as<std::string>();
+    std::ofstream outFile(filename);
+
     RingBuffer<Order> ordersBuffer(bufferSize);
     RingBuffer<Trade> matchBuffer(bufferSize);
     OrderBook orderBook(numOrders, matchBuffer);
@@ -45,40 +49,21 @@ int main(int argc, char* argv[]) {
 
     Engine engine(ordersBuffer, running, orderBook, numOrders);
     Gateway gateway(ordersBuffer, running, numOrders);
+    Publisher publisher(matchBuffer, running, filename);
 
     std::thread t_engine(&Engine::run, &engine);
-    // std::thread t_gateway(&Gateway::run, &gateway);
+    std::thread t_gateway(&Gateway::run, &gateway);
+    std::thread t_publisher(&Publisher::run, &publisher);
 
-    gateway.run();
-
-    // std::thread t_reporter([&]() {
-    //     Trade t;
-    //     while (running) {
-    //         while (matchBuffer.pop(t)) {
-    //             std::cout << t.price << " ";
-    //         }
-
-    //         std::this_thread::yield();
-    //     }
-    // });
-
-    running = false;
-
-    // t_gateway.join();
+    t_gateway.join();
     t_engine.join();
-    // t_reporter.join();
+    t_publisher.join();
 
     // engine.stop();
     engine.printStats();
 
     // Print current orders
-    std::string filename = result["output"].as<std::string>();
-    orderBook.printOrders(filename);
-
-    Trade t;
-    while (matchBuffer.pop(t)) {
-        std::cout << t.maker_id << std::endl;
-    }
+    // orderBook.printOrders(filename);
 
     return 0;
 }

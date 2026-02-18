@@ -223,30 +223,6 @@ __/src/orders_pool.cpp.s:
 	cd /home/edi/Desktop/Orderbook/build && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.s
 .PHONY : __/src/orders_pool.cpp.s
 
-__/src/ring_buffer.o: __/src/ring_buffer.cpp.o
-.PHONY : __/src/ring_buffer.o
-
-# target to build an object file
-__/src/ring_buffer.cpp.o:
-	cd /home/edi/Desktop/Orderbook/build && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.o
-.PHONY : __/src/ring_buffer.cpp.o
-
-__/src/ring_buffer.i: __/src/ring_buffer.cpp.i
-.PHONY : __/src/ring_buffer.i
-
-# target to preprocess a source file
-__/src/ring_buffer.cpp.i:
-	cd /home/edi/Desktop/Orderbook/build && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.i
-.PHONY : __/src/ring_buffer.cpp.i
-
-__/src/ring_buffer.s: __/src/ring_buffer.cpp.s
-.PHONY : __/src/ring_buffer.s
-
-# target to generate assembly for a file
-__/src/ring_buffer.cpp.s:
-	cd /home/edi/Desktop/Orderbook/build && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/unit_tests.dir/build.make tests/CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.s
-.PHONY : __/src/ring_buffer.cpp.s
-
 test_orderbook.o: test_orderbook.cpp.o
 .PHONY : test_orderbook.o
 
@@ -290,9 +266,6 @@ help:
 	@echo "... __/src/orders_pool.o"
 	@echo "... __/src/orders_pool.i"
 	@echo "... __/src/orders_pool.s"
-	@echo "... __/src/ring_buffer.o"
-	@echo "... __/src/ring_buffer.i"
-	@echo "... __/src/ring_buffer.s"
 	@echo "... test_orderbook.o"
 	@echo "... test_orderbook.i"
 	@echo "... test_orderbook.s"

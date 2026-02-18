@@ -80,6 +80,7 @@ void Gateway::run() {
                 std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
                 std::cout << "Throughput: " << throughput << " orders/second. \n";
 
+                running = false;
                 break;
             }
         }

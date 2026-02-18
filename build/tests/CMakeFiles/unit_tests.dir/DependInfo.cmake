@@ -10,7 +10,6 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/edi/Desktop/Orderbook/src/orderbook.cpp" "tests/CMakeFiles/unit_tests.dir/__/src/orderbook.cpp.o" "gcc" "tests/CMakeFiles/unit_tests.dir/__/src/orderbook.cpp.o.d"
   "/home/edi/Desktop/Orderbook/src/orders_pool.cpp" "tests/CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.o" "gcc" "tests/CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.o.d"
-  "/home/edi/Desktop/Orderbook/src/ring_buffer.cpp" "tests/CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.o" "gcc" "tests/CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.o.d"
   "/home/edi/Desktop/Orderbook/tests/test_orderbook.cpp" "tests/CMakeFiles/unit_tests.dir/test_orderbook.cpp.o" "gcc" "tests/CMakeFiles/unit_tests.dir/test_orderbook.cpp.o.d"
   )
 

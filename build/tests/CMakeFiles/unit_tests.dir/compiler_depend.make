@@ -405,9 +405,6 @@ tests/CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.o: /home/edi/Desktop/Orde
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
   /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h
 
-tests/CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.o: /home/edi/Desktop/Orderbook/src/ring_buffer.cpp \
-  /usr/include/stdc-predef.h
-
 tests/CMakeFiles/unit_tests.dir/test_orderbook.cpp.o: /home/edi/Desktop/Orderbook/tests/test_orderbook.cpp \
   _deps/googletest-src/googletest/include/gtest/gtest-assertion-result.h \
   _deps/googletest-src/googletest/include/gtest/gtest-death-test.h \
@@ -1100,6 +1097,8 @@ _deps/googletest-src/googletest/include/gtest/internal/gtest-string.h:
 
 /usr/include/c++/13/bits/stl_vector.h:
 
+/usr/include/c++/13/bits/stl_tempbuf.h:
+
 /home/edi/Desktop/Orderbook/include/orders_pool.hpp:
 
 /usr/include/c++/13/bits/stl_tree.h:
@@ -1493,10 +1492,6 @@ _deps/googletest-src/googletest/include/gtest/internal/gtest-port-arch.h:
 /usr/lib/gcc/x86_64-linux-gnu/13/include/stdint.h:
 
 /home/edi/Desktop/Orderbook/src/orders_pool.cpp:
-
-/usr/include/c++/13/bits/stl_tempbuf.h:
-
-/home/edi/Desktop/Orderbook/src/ring_buffer.cpp:
 
 /usr/include/c++/13/cstdio:
 

@@ -3,8 +3,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/unit_tests.dir/__/src/orderbook.cpp.o.d"
   "CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.o"
   "CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.o.d"
-  "CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.o"
-  "CMakeFiles/unit_tests.dir/__/src/ring_buffer.cpp.o.d"
   "CMakeFiles/unit_tests.dir/test_orderbook.cpp.o"
   "CMakeFiles/unit_tests.dir/test_orderbook.cpp.o.d"
   "unit_tests"
