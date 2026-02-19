@@ -12,6 +12,8 @@
 #include <map>
 #include <list>
 
+#define MAX_PRICE 1000
+
 class OrderBook {
 private:
     uint64_t numOrders;
@@ -27,7 +29,7 @@ private:
     uint32_t activeAsksCount = 0;
 
     uint64_t maxBid = 0;
-    uint64_t minAsk = 9999999;
+    uint64_t minAsk = MAX_PRICE;
 public:
     OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer);
     void addOrder(Order& order);

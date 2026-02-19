@@ -3,8 +3,8 @@
 OrderBook::OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer)
     : numOrders(numOfOrders),
       matchBuffer(_matchBuffer) {
-    bidOrders.resize(numOfOrders);
-    askOrders.resize(numOfOrders);
+    bidOrders.resize(MAX_PRICE);
+    askOrders.resize(MAX_PRICE);
 
     orderLookup.resize(numOfOrders + 1);
 }
@@ -182,6 +182,11 @@ uint32_t OrderBook::processOrder(Order& incoming) {
 
         Level& level = (incoming.side == Side::BUY) ? askOrders[minAsk] : bidOrders[maxBid];
         Order *order = level.head;
+
+        if (order->quantity == 0) {
+            removeOrder(order);
+            continue;
+        }
 
         uint32_t tradeQuantity = std::min(incoming.quantity, order->quantity);
 

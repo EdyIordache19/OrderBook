@@ -36,6 +36,10 @@ void Gateway::run() {
         exit(-1);
     }
 
+    // Make receiving buffer size 16MB to avoid packets loss (UDP)
+    int rcv_buff_size = 16000000;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &rcv_buff_size, sizeof(rcv_buff_size));
+
     memset(&serv_addr, 0, sizeof(serv_addr));
 
     serv_addr.sin_family = AF_INET;
