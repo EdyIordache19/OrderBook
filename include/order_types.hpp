@@ -20,7 +20,7 @@ enum Side : uint8_t {
     SELL = 1
 };
 
-struct Trade {
+struct __attribute__((packed)) Trade {
     uint64_t maker_id;
     uint64_t taker_id;
     uint64_t price;
