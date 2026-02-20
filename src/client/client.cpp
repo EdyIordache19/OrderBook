@@ -49,6 +49,8 @@ int main(int argc, char *argv[]) {
     std::uniform_int_distribution<> price_dist(90, 110);
     std::uniform_int_distribution<> qty_dist(1, 100);
     std::uniform_int_distribution<> side_dist(0, 1);
+    std::uniform_int_distribution<> tif_dist(0, 2);
+    std::uniform_int_distribution<> type_dist(0, 2);
 
     std::cout << "Blasting " << numOrders << " orders in batches of " << batchSize << "..." << std::endl;
 
@@ -68,8 +70,8 @@ int main(int argc, char *argv[]) {
             msgs[i].price = price_dist(gen);
             msgs[i].quantity = qty_dist(gen);
             msgs[i].side = side_dist(gen) == 0 ? 'B' : 'S';
-            msgs[i].tif = 0;
-            msgs[i].type = 0;
+            msgs[i].tif = tif_dist(gen);
+            msgs[i].type = type_dist(gen);
         }
 
         int ret = sendmmsg(sockfd, msgvec, batchSize, 0);

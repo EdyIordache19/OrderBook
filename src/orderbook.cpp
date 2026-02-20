@@ -152,10 +152,10 @@ void OrderBook::matchOrders() {
 
 uint32_t OrderBook::processOrder(Order& incoming) {
     if (incoming.type == OrderType::MARKET) {
-        incoming.price = incoming.side == Side::BUY ? numOrders - 1 : 0;
+        incoming.price = incoming.side == Side::BUY ? MAX_PRICE - 1 : 0;
     }
 
-    if (incoming.price >= numOrders) {
+    if (incoming.price >= MAX_PRICE) {
         return incoming.quantity;
     }
 

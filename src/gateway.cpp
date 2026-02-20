@@ -68,7 +68,7 @@ void Gateway::run() {
         }
 
         Order order;
-        if (Decoder::decode(buffer, n_bytes, order, numOrders)) {
+        if (Decoder::decode(buffer, n_bytes, order, MAX_PRICE)) {
             while (ordersBuffer.push(order) != 0);
 
             orders_received++;
