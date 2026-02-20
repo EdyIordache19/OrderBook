@@ -20,12 +20,51 @@ enum Side : uint8_t {
     SELL = 1
 };
 
+enum MsgType : uint8_t {
+    MSG_TRADE = 1,
+    MSG_BOOK_SNAPSHOT = 2
+};
+
+struct MsgHdr {
+    MsgType type;
+    uint8_t size;
+};
+
+struct PriceLevel {
+    uint64_t price;
+    uint32_t quantity;
+
+    PriceLevel(uint64_t _price, uint32_t _quantity) :
+        price(_price),
+        quantity(_quantity)
+        { }
+
+    PriceLevel() { }
+};
+
+struct BookSnapshot {
+    uint8_t num_bids;
+    uint8_t num_asks;
+    PriceLevel bids[10];
+    PriceLevel asks[10];
+};
+
 struct __attribute__((packed)) Trade {
     uint64_t maker_id;
     uint64_t taker_id;
     uint64_t price;
     uint32_t quantity;
     uint64_t timestamp;
+
+    Trade() { }
+
+    Trade(uint64_t _maker_id, uint64_t _taker_id, uint64_t _price, uint32_t _quantity, uint64_t _timestamp) :
+        maker_id(_maker_id),
+        taker_id(_taker_id),
+        price(_price),
+        quantity(_quantity),
+        timestamp(_timestamp)
+        { }
 };
 
 struct alignas(64) Order {
@@ -51,7 +90,6 @@ struct alignas(64) Order {
         type(_type)
             { }
 };
-
 
 struct Level {
     // First order (highest priority)

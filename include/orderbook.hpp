@@ -41,6 +41,8 @@ public:
     void printOrders(std::string filename);
     void printOrder(const Order *order, std::ostream& outFile);
 
+    BookSnapshot getBookSnapshot();
+
     uint32_t getLevelQuantity(uint64_t price, Side side);
 
     uint64_t getMaxBid() {
@@ -49,6 +51,13 @@ public:
     uint64_t getMinAsk() {
         return minAsk;
     }
+    uint32_t getActiveAsksCount() {
+        return activeAsksCount;
+    }
+    uint32_t getActiveBidsCount() {
+        return activeBidsCount;
+    }
+
     bool isEmpty() {
         return activeAsksCount == 0 && activeBidsCount == 0;
     }

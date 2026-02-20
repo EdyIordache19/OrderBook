@@ -9,15 +9,46 @@
 #include <unistd.h>
 
 
-Publisher::Publisher(RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename)
-    : matchBuffer(_matchBuffer),
+Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename)
+    : book(_book),
+      matchBuffer(_matchBuffer),
       running(_running),
       filename(_filename)
     { }
 
+
+void printSnapshot(std::ofstream& outFile, BookSnapshot snapshot) {
+    outFile << "BIDS: \n";
+    for (int i = 0; i < snapshot.num_bids; i++) {
+        outFile << "LEVEL " << i << ":   ";
+        outFile << "PRICE: " << snapshot.bids[i].price << "     ";
+        outFile << "QTY: " << snapshot.bids[i].quantity << "\n";
+    }
+
+    outFile << "\n";
+
+    outFile << "ASKS: \n";
+    for (int i = 0; i < snapshot.num_asks; i++) {
+        outFile << "LEVEL " << i << ":   ";
+        outFile << "PRICE: " << snapshot.asks[i].price << "     ";
+        outFile << "QTY: " << snapshot.asks[i].quantity << "\n";
+    }
+
+    outFile << "\n";
+
+    for (int i = 0; i < 30; i++) {
+        outFile << "--";
+    }
+    outFile << "\n\n";
+
+}
+
 void Publisher::run() {
     pin_thread_to_core(3);
 
+    /**
+     * Open the UDP multicast socket
+     */
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(sockaddr_in));
@@ -33,10 +64,13 @@ void Publisher::run() {
         if (!matchBuffer.is_empty()) {
             matchBuffer.pop(trade);
 
-            outFile << "Maker ID: " << trade.maker_id << ", ";
-            outFile << "Taker ID: " << trade.taker_id << ", ";
-            outFile << "Price: " << trade.price << ", ";
-            outFile << "Quantity: " << trade.quantity << "\n";
+            BookSnapshot snapshot = book.getBookSnapshot();
+            printSnapshot(outFile, snapshot);
+
+            // outFile << "Maker ID: " << trade.maker_id << ", ";
+            // outFile << "Taker ID: " << trade.taker_id << ", ";
+            // outFile << "Price: " << trade.price << ", ";
+            // outFile << "Quantity: " << trade.quantity << "\n";
 
             sendto(sockfd, &trade, sizeof(Trade), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
         } else {

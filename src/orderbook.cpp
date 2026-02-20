@@ -193,13 +193,7 @@ uint32_t OrderBook::processOrder(Order& incoming) {
         incoming.quantity -= tradeQuantity;
         order->quantity -= tradeQuantity;
 
-        Trade trade;
-        trade.maker_id = incoming.id;
-        trade.taker_id = order->id;
-        trade.quantity = tradeQuantity;
-        trade.price = incoming.price;
-        trade.timestamp = incoming.timestamp;
-
+        Trade trade(incoming.id, order->id, tradeQuantity, incoming.price, incoming.timestamp);
         matchBuffer.push(trade);
 
         if (order->quantity == 0) {
@@ -339,4 +333,62 @@ uint32_t OrderBook::getLevelQuantity(uint64_t price, Side side) {
     }
 
     return num_of_orders;
+}
+
+BookSnapshot OrderBook::getBookSnapshot() {
+    BookSnapshot newSnapshot;
+
+    uint64_t currentAsk = minAsk;
+
+    uint8_t askLevels = 0;
+    for (int i = 0; i < 10; i++) {
+        if (currentAsk > askOrders.size()) break;
+
+        Level askLevel = askOrders[currentAsk];
+        Order *order = askLevel.head;
+        if (order == nullptr) break;
+
+        PriceLevel newPriceLevel(currentAsk, 0);
+        while (order) {
+            newPriceLevel.quantity += order->quantity;
+            order = order->next;
+        }
+
+        newSnapshot.asks[i] = newPriceLevel;
+        askLevels++;
+
+        currentAsk++;
+        while (currentAsk < askOrders.size() && askOrders[currentAsk].head == nullptr) {
+            currentAsk++;
+        }
+    }
+    newSnapshot.num_asks = askLevels;
+
+    uint64_t currentBid = maxBid;
+    uint8_t bidLevels = 0;
+    for (int i = 0; i < 10; i++) {
+        if (currentBid == 0) break;
+
+        Level bidLevel = bidOrders[currentBid];
+        Order *order = bidLevel.head;
+        if (order == nullptr) break;
+
+        PriceLevel newPriceLevel(currentBid, 0);
+        while (order) {
+            newPriceLevel.quantity += order->quantity;
+            order = order->next;
+        }
+
+        newSnapshot.bids[i] = newPriceLevel;
+        bidLevels++;
+
+        currentBid--;
+        while (currentBid > 0 && bidOrders[currentBid].head == nullptr) {
+            currentBid--;
+        }
+    }
+
+    newSnapshot.num_bids = bidLevels;
+
+    return newSnapshot;
 }

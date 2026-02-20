@@ -45,8 +45,3 @@ tests/unit_tests
 *.txt
 
 # build artifacts
-build/
-CMakeFiles/
-_deps
-*.cmake
-Makefile

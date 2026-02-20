@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 
     Engine engine(ordersBuffer, running, orderBook, numOrders);
     Gateway gateway(ordersBuffer, running, numOrders);
-    Publisher publisher(matchBuffer, running, filename);
+    Publisher publisher(orderBook, matchBuffer, running, filename);
 
     std::thread t_engine(&Engine::run, &engine);
     std::thread t_gateway(&Gateway::run, &gateway);
