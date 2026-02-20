@@ -72,7 +72,7 @@ void Gateway::run() {
             while (ordersBuffer.push(order) != 0);
 
             orders_received++;
-            if (order.type == OrderType::KILL) {
+            if (order.type == OrderType::KILL || orders_received >= numOrders) {
                 std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
                 running.store(false, std::memory_order_release);
 
