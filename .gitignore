@@ -42,6 +42,7 @@ tests/unit_tests
 *.dwo
 
 # output and input files
-*.txt
+out.txt
 
 # build artifacts
+build/

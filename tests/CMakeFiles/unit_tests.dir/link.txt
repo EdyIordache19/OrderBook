@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/unit_tests.dir/test_orderbook.cpp.o CMakeFiles/unit_tests.dir/__/src/orderbook.cpp.o CMakeFiles/unit_tests.dir/__/src/orders_pool.cpp.o -o unit_tests  ../lib/libgtest_main.a ../lib/libgtest.a 
