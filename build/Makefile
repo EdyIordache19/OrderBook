@@ -252,29 +252,29 @@ gtest_main/fast:
 	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build
 .PHONY : gtest_main/fast
 
-src/client/client.o: src/client/client.cpp.o
-.PHONY : src/client/client.o
+apps/client.o: apps/client.cpp.o
+.PHONY : apps/client.o
 
 # target to build an object file
-src/client/client.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client/client.cpp.o
-.PHONY : src/client/client.cpp.o
+apps/client.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/apps/client.cpp.o
+.PHONY : apps/client.cpp.o
 
-src/client/client.i: src/client/client.cpp.i
-.PHONY : src/client/client.i
+apps/client.i: apps/client.cpp.i
+.PHONY : apps/client.i
 
 # target to preprocess a source file
-src/client/client.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client/client.cpp.i
-.PHONY : src/client/client.cpp.i
+apps/client.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/apps/client.cpp.i
+.PHONY : apps/client.cpp.i
 
-src/client/client.s: src/client/client.cpp.s
-.PHONY : src/client/client.s
+apps/client.s: apps/client.cpp.s
+.PHONY : apps/client.s
 
 # target to generate assembly for a file
-src/client/client.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/src/client/client.cpp.s
-.PHONY : src/client/client.cpp.s
+apps/client.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/apps/client.cpp.s
+.PHONY : apps/client.cpp.s
 
 src/decoder.o: src/decoder.cpp.o
 .PHONY : src/decoder.o
@@ -487,9 +487,9 @@ help:
 	@echo "... gtest_main"
 	@echo "... orderbook"
 	@echo "... unit_tests"
-	@echo "... src/client/client.o"
-	@echo "... src/client/client.i"
-	@echo "... src/client/client.s"
+	@echo "... apps/client.o"
+	@echo "... apps/client.i"
+	@echo "... apps/client.s"
 	@echo "... src/decoder.o"
 	@echo "... src/decoder.i"
 	@echo "... src/decoder.s"

@@ -36,6 +36,7 @@
 *.exe
 *.out
 *.app
+tests/unit_tests
 
 # debug information files
 *.dwo
@@ -45,3 +46,7 @@
 
 # build artifacts
 build/
+CMakeFiles/
+_deps
+*.cmake
+Makefile
