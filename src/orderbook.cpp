@@ -209,7 +209,7 @@ uint32_t OrderBook::processOrder(Order& incoming) {
         incoming.quantity -= tradeQuantity;
         order->quantity -= tradeQuantity;
 
-        Trade trade(incoming.id, order->id, tradeQuantity, incoming.price, incoming.timestamp);
+        Trade trade(incoming.id, order->id, incoming.price, tradeQuantity, incoming.timestamp);
         matchBuffer.push(trade);
 
         if (order->quantity == 0) {
