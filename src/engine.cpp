@@ -35,7 +35,9 @@ void Engine::run() {
                 uint32_t remaining_qty = orderBook.processOrder(order);
 
                 order.quantity = remaining_qty;
-                orderBook.addOrder(order);
+                if (remaining_qty > 0 && order.type != OrderType::MARKET) {
+                    orderBook.addOrder(order);
+                }
             }
 
             uint64_t now = std::chrono::steady_clock::now().time_since_epoch().count();

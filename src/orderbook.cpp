@@ -46,26 +46,32 @@ void OrderBook::removeOrder(uint64_t orderId) {
     }
 
     Order* orderToRemove = orderLookup[orderId];
-    std::vector<Level>& book = orderToRemove->side == Side::BUY ? bidOrders : askOrders;
+    Level& level = orderToRemove->side == Side::BUY ? bidOrders[orderToRemove->price] : askOrders[orderToRemove->price];
 
     if (orderToRemove->prev) {
         orderToRemove->prev->next = orderToRemove->next;
     } else {
         // It's the head (highest priority)
-        book[orderToRemove->price].head = orderToRemove->next;
+        level.head = orderToRemove->next;
     }
 
     if (orderToRemove->next) {
         orderToRemove->next->prev = orderToRemove->prev;
     } else {
         // It's the tail (lowest priority)
-        book[orderToRemove->price].tail = orderToRemove->prev;
+        level.tail = orderToRemove->prev;
     }
 
     if (orderToRemove->side == Side::BUY) {
         activeBidsCount--;
+        if (level.head == nullptr && orderToRemove->price == maxBid) {
+            while (maxBid > 0 && bidOrders[maxBid].head == nullptr) maxBid--;
+        }
     } else {
         activeAsksCount--;
+        if (level.head == nullptr && orderToRemove->price == minAsk) {
+            while (minAsk < askOrders.size() && askOrders[minAsk].head == nullptr) minAsk++;
+        }
     }
 
     orderLookup[orderId] = nullptr;
@@ -129,6 +135,9 @@ void OrderBook::matchOrders() {
             askOrder->quantity -= tradeQuantity;
             bidOrder->quantity -= tradeQuantity;
 
+            uint64_t bidPrice = bidOrder->price;
+            uint64_t askPrice = askOrder->price;
+
             if (bidOrder->quantity == 0) {
                 bidLevel.head = bidOrder->next;
                 if (bidLevel.head) bidLevel.head->prev = nullptr;
@@ -143,6 +152,13 @@ void OrderBook::matchOrders() {
                 else askLevel.tail = nullptr;
 
                 ordersPool.deallocateOrder(askOrder);
+            }
+
+            if (bidOrders[bidPrice].head == nullptr && bidPrice == maxBid) {
+                while (maxBid > 0 && bidOrders[maxBid].head == nullptr) maxBid--;
+            }
+            if (askOrders[askPrice].head == nullptr && askPrice == minAsk) {
+                while (minAsk < MAX_PRICE && askOrders[minAsk].head == nullptr) minAsk++;
             }
         } else {
             break;
@@ -201,13 +217,25 @@ uint32_t OrderBook::processOrder(Order& incoming) {
             if (level.head) level.head->prev = nullptr;
             else level.tail = nullptr;
 
-            orderLookup[order->id] = nullptr;
-            ordersPool.deallocateOrder(order);
-
             if (order->side == Side::BUY) {
                 activeBidsCount--;
             } else {
                 activeAsksCount--;
+            }
+
+            orderLookup[order->id] = nullptr;
+            ordersPool.deallocateOrder(order);
+
+            if (level.head == nullptr) {
+                if (incoming.side == Side::BUY) { // We just depleted an Ask level
+                    while (minAsk < askOrders.size() && askOrders[minAsk].head == nullptr) {
+                        minAsk++;
+                    }
+                } else { // We just depleted a Bid level
+                    while (maxBid > 0 && bidOrders[maxBid].head == nullptr) {
+                        maxBid--;
+                    }
+                }
             }
         }
     }
@@ -341,53 +369,46 @@ BookSnapshot OrderBook::getBookSnapshot() {
     uint64_t currentAsk = minAsk;
 
     uint8_t askLevels = 0;
-    for (int i = 0; i < 10; i++) {
-        if (currentAsk > askOrders.size()) break;
+    while (askLevels < 10 && currentAsk < askOrders.size()) {
+        Order *order = askOrders[currentAsk].head;
 
-        Level askLevel = askOrders[currentAsk];
-        Order *order = askLevel.head;
-        if (order == nullptr) break;
+        if (order != nullptr) {
+            PriceLevel newPriceLevel(currentAsk, 0);
+            while (order) {
+                newPriceLevel.quantity += order->quantity;
+                order = order->next;
+            }
 
-        PriceLevel newPriceLevel(currentAsk, 0);
-        while (order) {
-            newPriceLevel.quantity += order->quantity;
-            order = order->next;
+            if (newPriceLevel.quantity > 0) {
+                newSnapshot.asks[askLevels] = newPriceLevel;
+                askLevels++;
+            }
         }
-
-        newSnapshot.asks[i] = newPriceLevel;
-        askLevels++;
 
         currentAsk++;
-        while (currentAsk < askOrders.size() && askOrders[currentAsk].head == nullptr) {
-            currentAsk++;
-        }
     }
     newSnapshot.num_asks = askLevels;
 
     uint64_t currentBid = maxBid;
     uint8_t bidLevels = 0;
-    for (int i = 0; i < 10; i++) {
-        if (currentBid == 0) break;
+    while (bidLevels < 10 && currentBid > 0) {
+        Order *order = bidOrders[currentBid].head;
 
-        Level bidLevel = bidOrders[currentBid];
-        Order *order = bidLevel.head;
-        if (order == nullptr) break;
+        if (order != nullptr) {
+            PriceLevel newPriceLevel(currentBid, 0);
+            while (order) {
+                newPriceLevel.quantity += order->quantity;
+                order = order->next;
+            }
 
-        PriceLevel newPriceLevel(currentBid, 0);
-        while (order) {
-            newPriceLevel.quantity += order->quantity;
-            order = order->next;
+            if (newPriceLevel.quantity > 0) {
+                newSnapshot.bids[bidLevels] = newPriceLevel;
+                bidLevels++;
+            }
         }
-
-        newSnapshot.bids[i] = newPriceLevel;
-        bidLevels++;
 
         currentBid--;
-        while (currentBid > 0 && bidOrders[currentBid].head == nullptr) {
-            currentBid--;
-        }
     }
-
     newSnapshot.num_bids = bidLevels;
 
     return newSnapshot;
