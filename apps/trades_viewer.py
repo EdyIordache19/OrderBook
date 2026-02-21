@@ -30,5 +30,5 @@ while True:
         print(f"🟢 TRADE | Price: {price:4} | Qty: {qty:3} | Maker: {maker:4} vs Taker: {taker:4}")
     if msg_type == 2:
         # DO SOMETHING FOR BOOK SNAPSHOT
-
+        print("BOOK SNAPSHOT RECIEVED")
         pass

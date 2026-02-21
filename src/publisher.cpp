@@ -60,7 +60,23 @@ void Publisher::run() {
     std::ofstream outFile(filename);
 
     Trade trade;
+    auto interval = std::chrono::milliseconds(50);
+    auto next_send_time = std::chrono::high_resolution_clock::now();
     while (running) {
+        auto now = std::chrono::high_resolution_clock::now();
+        if (now >= next_send_time) {
+            BookSnapshot snapshot = book.getBookSnapshot();
+
+            SnapshotPacket packet;
+            packet.header.type = MsgType::MSG_BOOK_SNAPSHOT;
+            packet.header.size = sizeof(BookSnapshot);
+
+            packet.payload = snapshot;
+            sendto(sockfd, &packet, sizeof(SnapshotPacket) , 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+
+            next_send_time += interval;
+        }
+
         if (!matchBuffer.is_empty()) {
             matchBuffer.pop(trade);
 
