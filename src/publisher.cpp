@@ -64,15 +64,21 @@ void Publisher::run() {
         if (!matchBuffer.is_empty()) {
             matchBuffer.pop(trade);
 
-            BookSnapshot snapshot = book.getBookSnapshot();
-            printSnapshot(outFile, snapshot);
+            TradePacket packet;
+            packet.header.type = MsgType::MSG_TRADE;
+            packet.header.size = sizeof(Trade);
+
+            packet.payload = trade;
+
+            // BookSnapshot snapshot = book.getBookSnapshot();
+            // printSnapshot(outFile, snapshot);
 
             // outFile << "Maker ID: " << trade.maker_id << ", ";
             // outFile << "Taker ID: " << trade.taker_id << ", ";
             // outFile << "Price: " << trade.price << ", ";
             // outFile << "Quantity: " << trade.quantity << "\n";
 
-            sendto(sockfd, &trade, sizeof(Trade), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+            sendto(sockfd, &packet, sizeof(TradePacket) , 0, (const sockaddr *)&servaddr, sizeof(servaddr));
         } else {
             std::this_thread::yield();
         }

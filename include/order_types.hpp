@@ -25,12 +25,7 @@ enum MsgType : uint8_t {
     MSG_BOOK_SNAPSHOT = 2
 };
 
-struct MsgHdr {
-    MsgType type;
-    uint8_t size;
-};
-
-struct PriceLevel {
+struct __attribute__((packed)) PriceLevel {
     uint64_t price;
     uint32_t quantity;
 
@@ -42,7 +37,7 @@ struct PriceLevel {
     PriceLevel() { }
 };
 
-struct BookSnapshot {
+struct __attribute__((packed)) BookSnapshot {
     uint8_t num_bids;
     uint8_t num_asks;
     PriceLevel bids[10];
@@ -97,4 +92,19 @@ struct Level {
 
     // Last order (lowest priority)
     Order *tail = nullptr;
+};
+
+struct __attribute__((packed)) MsgHdr {
+    MsgType type;
+    uint16_t size;
+};
+
+struct __attribute__((packed)) TradePacket {
+    MsgHdr header;
+    Trade payload;
+};
+
+struct __attribute__((packed)) SnapshotPacket {
+    MsgHdr header;
+    BookSnapshot payload;
 };
