@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
             msgs[i].quantity = qty_dist(gen);
             msgs[i].side = side_dist(gen) == 0 ? 'B' : 'S';
             msgs[i].tif = tif_dist(gen);
-            msgs[i].type = type_dist(gen);
+            msgs[i].type = 0;
         }
 
         int ret = sendmmsg(sockfd, msgvec, batchSize, 0);
