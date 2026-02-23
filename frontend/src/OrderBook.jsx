@@ -31,4 +31,4 @@ const OrderBook = ({ snapshot }) => {
     );
 };
 
-export default OrderBook
+export default OrderBook;
