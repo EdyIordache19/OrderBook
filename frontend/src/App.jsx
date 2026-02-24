@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import OrderBook from './OrderBook';
 import Chart from "./Chart"
+import Header from "./Header"
 
 const initialData = [
     { time: '2018-12-22', value: 32.51 },
@@ -36,14 +37,19 @@ function App(props) {
     }, []);
 
     return (
-        <div style={{ background: '#131722', color: 'white', width: '100%'}}>
-			<div>
-                <Chart {...props} data={initialData}></Chart>
+        <div>
+            <div id="header">
+                <Header />
             </div>
-			<br></br>
-            {/* <div style={{ width: '300px' }}>
-                <OrderBook snapshot={snapshot} />
-            </div> */}
+            <div id="footer">
+                <div id="chart-div">
+                    <Chart latestTrade={latestTrade}></Chart>
+                </div>
+                <br></br>
+                <div id="snapshot-div" style={{ width: '300px' }}>
+                    <OrderBook id="snapshot" snapshot={snapshot} />
+                </div>
+            </div>
         </div>
     );
 }

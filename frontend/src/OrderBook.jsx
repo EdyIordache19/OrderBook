@@ -4,30 +4,36 @@ const OrderBook = ({ snapshot }) => {
     if (!snapshot) return <div>Loading...</div>;
 
     return (
-        <div className="orderbook">
-            <div className="asks">
+        <table className="orderbook" style={{ borderCollapse: 'collapse', width: '200px' }}>
+            <thead>
+                <tr>
+                    <th>QTY</th>
+                    <th>PRICE</th>
+                </tr>
+            </thead>
+            <tbody>
+                {/* Asks (Red) */}
                 {snapshot.asks.slice().reverse().map((ask, i) => (
-                    <div key={i} style={{ display: 'flex', color: 'red' }}>
-                        <span>PRICE: {ask.price}</span>
-                        &nbsp;&nbsp;&nbsp;
-                        <span>QTY: {ask.qty}</span>
-                    </div>
+                    <tr key={`ask-${i}`} style={{ color: 'red' }}>
+                        <td>{ask.qty}</td>
+                        <td>{ask.price}</td>
+                    </tr>
                 ))}
-            </div>
 
-            <div className="spread">
-            </div>
+                {/* Spread (Optional empty row separator) */}
+                <tr className="spread">
+                    <td colSpan="2" style={{ height: '10px' }}></td>
+                </tr>
 
-            <div className="bids">
+                {/* Bids (Green) */}
                 {snapshot.bids.map((bid, i) => (
-                    <div key={i} style={{ display: 'flex', color: 'green' }}>
-                        <span>PRICE: {bid.price}</span>
-                        &nbsp;&nbsp;&nbsp;
-                        <span>QTY: {bid.qty}</span>
-                    </div>
+                    <tr key={`bid-${i}`} style={{ color: 'green' }}>
+                        <td>{bid.qty}</td>
+                        <td>{bid.price}</td>
+                    </tr>
                 ))}
-            </div>
-        </div>
+            </tbody>
+        </table>
     );
 };
 
