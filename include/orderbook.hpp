@@ -12,7 +12,7 @@
 #include <map>
 #include <list>
 
-#define MAX_PRICE 1000
+#define MAX_PRICE 10000
 
 class OrderBook {
 private:

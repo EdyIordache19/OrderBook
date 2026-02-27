@@ -11,7 +11,7 @@ const OrderBook = ({ snapshot }) => {
                     <th>PRICE</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id='snapshot-body'>
                 {/* Asks (Red) */}
                 {snapshot.asks.slice().reverse().map((ask, i) => (
                     <tr key={`ask-${i}`} style={{ color: 'red' }}>

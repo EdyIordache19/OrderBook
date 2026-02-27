@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> price_dist(90, 110);
+    std::uniform_int_distribution<> mid_price_movement(-1, 1);
     std::uniform_int_distribution<> qty_dist(1, 100);
     std::uniform_int_distribution<> side_dist(0, 1);
     std::uniform_int_distribution<> tif_dist(0, 2);
@@ -54,24 +54,29 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Blasting " << numOrders << " orders in batches of " << batchSize << "..." << std::endl;
 
+    int mid_price = 1000;
     for (uint64_t i = 0; i < numOrders; i += batchSize) {
-        for (int i = 0; i < batchSize; i++) {
-            memset(&iovecs[i], 0, sizeof(iovecs[i]));
-            iovecs[i].iov_base = &msgs[i];
-            iovecs[i].iov_len = sizeof(WireMessage);
+        for (int j = 0; j < batchSize; j++) {
+            memset(&iovecs[j], 0, sizeof(iovecs[j]));
+            iovecs[j].iov_base = &msgs[j];
+            iovecs[j].iov_len = sizeof(WireMessage);
 
-            memset(&msgvec[i], 0, sizeof(msgvec[i]));
-            msgvec[i].msg_hdr.msg_name = &servaddr;
-            msgvec[i].msg_hdr.msg_namelen = sizeof(servaddr);
-            msgvec[i].msg_hdr.msg_iov = &iovecs[i];
-            msgvec[i].msg_hdr.msg_iovlen = 1;
+            memset(&msgvec[j], 0, sizeof(msgvec[j]));
+            msgvec[j].msg_hdr.msg_name = &servaddr;
+            msgvec[j].msg_hdr.msg_namelen = sizeof(servaddr);
+            msgvec[j].msg_hdr.msg_iov = &iovecs[j];
+            msgvec[j].msg_hdr.msg_iovlen = 1;
 
-            msgs[i].id = i;
-            msgs[i].price = price_dist(gen);
-            msgs[i].quantity = qty_dist(gen);
-            msgs[i].side = side_dist(gen) == 0 ? 'B' : 'S';
-            msgs[i].tif = tif_dist(gen);
-            msgs[i].type = 0;
+            msgs[j].id = i + j;
+
+            std::uniform_int_distribution price_dist(mid_price - 1, mid_price + 1);
+            msgs[j].price = std::min(std::max(price_dist(gen), 0), MAX_PRICE - 1);
+            msgs[j].quantity = qty_dist(gen);
+            msgs[j].side = side_dist(gen) == 0 ? 'B' : 'S';
+            msgs[j].tif = tif_dist(gen);
+            msgs[j].type = 0;
+
+            mid_price += mid_price_movement(gen);
         }
 
         int ret = sendmmsg(sockfd, msgvec, batchSize, 0);

@@ -8,7 +8,7 @@ export const Chart = ({ latestTrade }) => {
 
     useEffect(() => {
         const chart = createChart(chartContainerRef.current, {
-            width: 1500, height: 900,
+            width: 1400, height: 800,
             layout: {
                 background: { color: '#131722' },
                 textColor: '#d1d4dc'
@@ -24,7 +24,7 @@ export const Chart = ({ latestTrade }) => {
     useEffect(() => {
         if (!latestTrade || !candlestickSeriesRef.current) return;
 
-        const tradeTime = Math.floor(Date.now() / 1000);
+        const tradeTime = Math.floor(Date.now() / 100);
         const price = Number(latestTrade.price);
 
         if (!currentBarRef.current || currentBarRef.current.time !== tradeTime) {
