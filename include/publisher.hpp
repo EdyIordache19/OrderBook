@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <ctime>
 
 #include "order_types.hpp"
 #include "ring_buffer.hpp"

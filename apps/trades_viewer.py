@@ -71,7 +71,8 @@ async def udp_listener():
         "high": 0,
         "low": float('inf'),
         "close": 0,
-        "volume": 0
+        "volume": 0,
+        "time": 0
     }
     latest_snapshot = None
 
@@ -83,13 +84,14 @@ async def udp_listener():
                 payload = data[HDR_SIZE : HDR_SIZE + msg_size]
 
                 if msg_type == 1:
-                    open, high, low, close, vol, is_active = struct.unpack('<QQQQIB', payload)
+                    open, high, low, close, vol, is_active, time = struct.unpack('<QQQQIBQ', payload)
 
                     current_candle["open"] = open
                     current_candle["high"] = high
                     current_candle["low"] = low
                     current_candle["close"] = close
                     current_candle["volume"] = vol
+                    current_candle["time"] = time
                 elif msg_type == 2:
                     latest_snapshot = payload
 

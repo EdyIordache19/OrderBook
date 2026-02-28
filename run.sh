@@ -9,6 +9,7 @@ set -e
 
 echo "Building C++ project..."
 cd build
+rm -f .last_time.txt 2>/dev/null
 make -j$(nproc)
 cd ..
 

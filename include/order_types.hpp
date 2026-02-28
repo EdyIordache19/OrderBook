@@ -51,6 +51,7 @@ struct __attribute__((packed)) Candle {
     uint64_t close = 0;
     uint32_t volume = 0;
     bool is_active = false;
+    uint64_t simulated_time;
 };
 
 struct __attribute__((packed)) Trade {

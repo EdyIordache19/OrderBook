@@ -90,6 +90,15 @@ void Publisher::run() {
     auto interval = std::chrono::milliseconds(50);
     auto next_send_time = std::chrono::high_resolution_clock::now();
 
+    time_t timestamp;
+    time(&timestamp);
+    uint64_t logical_time = (uint64_t)timestamp;
+    std::ifstream time_in(".last_time.txt");
+    if (time_in.good()) {
+        time_in >> logical_time;
+    }
+    time_in.close();
+
     Candle current_candle;
     while (running) {
         auto now = std::chrono::high_resolution_clock::now();
@@ -105,6 +114,9 @@ void Publisher::run() {
             send_snapshot(sockfd, servaddr);
 
             if (current_candle.is_active) {
+                current_candle.simulated_time = logical_time;
+                logical_time++;
+
                 send_candle(sockfd, servaddr, current_candle);
                 current_candle = Candle();
             }
@@ -112,6 +124,12 @@ void Publisher::run() {
             next_send_time += interval;
         }
     }
+
+    std::ofstream time_out(".last_time.txt");
+    if (time_out.good()) {
+        time_out << logical_time;
+    }
+    time_out.close();
 
     close(sockfd);
 }

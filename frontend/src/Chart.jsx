@@ -46,8 +46,8 @@ export const Chart = ({ latestTrade }) => {
     useEffect(() => {
         if (!latestTrade || !candlestickSeriesRef.current) return;
 
-        const tradeTime = Math.floor(Date.now() / 1000);
         const data = latestTrade.data;
+        const tradeTime = data.time;
         const isUp = data.close >= data.open;
 
         if (!currentBarRef.current || currentBarRef.current.time != tradeTime) {
