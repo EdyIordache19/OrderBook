@@ -1,10 +1,11 @@
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, HistogramSeries } from 'lightweight-charts';
 import React, { useEffect, useRef } from 'react';
 
 export const Chart = ({ latestTrade }) => {
     const chartContainerRef = useRef();
     const candlestickSeriesRef = useRef();
     const currentBarRef = useRef(null);
+    const volumeSeriesRef = useRef();
 
     useEffect(() => {
         const chart = createChart(chartContainerRef.current, {
@@ -18,14 +19,36 @@ export const Chart = ({ latestTrade }) => {
 
         candlestickSeriesRef.current = chart.addSeries(CandlestickSeries);
 
+        candlestickSeriesRef.current.priceScale().applyOptions({
+            scaleMargins: {
+                top: 0.1,
+                bottom: 0.3,
+            },
+        });
+
+        volumeSeriesRef.current = chart.addSeries(HistogramSeries, {
+            priceFormat: {
+                type: 'volume',
+            },
+            priceScaleId: '',
+        });
+
+        volumeSeriesRef.current.priceScale().applyOptions({
+            scaleMargins: {
+                top: 0.8,
+                bottom: 0.0,
+            },
+        });
+
         return () => chart.remove();
     }, []);
 
     useEffect(() => {
         if (!latestTrade || !candlestickSeriesRef.current) return;
 
-        const tradeTime = Math.floor(Date.now() / 100);
+        const tradeTime = Math.floor(Date.now() / 1000);
         const data = latestTrade.data;
+        const isUp = data.close >= data.open;
 
         if (!currentBarRef.current || currentBarRef.current.time != tradeTime) {
             const openPrice = currentBarRef.current ? currentBarRef.current.close : data.open;
@@ -43,6 +66,12 @@ export const Chart = ({ latestTrade }) => {
         }
 
         candlestickSeriesRef.current.update(currentBarRef.current);
+
+        volumeSeriesRef.current.update({
+            time: tradeTime,
+            value: data.volume,
+            color: isUp ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
+        });
     }, [latestTrade]);
 
     return <div ref={chartContainerRef} />;
