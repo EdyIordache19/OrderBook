@@ -3,6 +3,7 @@ import struct
 import websockets
 import asyncio
 import json
+import time
 
 MCAST_GRP = '239.0.0.1'
 MCAST_PORT = 5000
@@ -65,39 +66,58 @@ async def udp_listener():
     HDR_FORMAT = '<BH'
     HDR_SIZE = struct.calcsize(HDR_FORMAT)
 
-    loop = asyncio.get_event_loop()
+    current_candle = {
+        "open": None,
+        "high": 0,
+        "low": float('inf'),
+        "close": 0,
+        "volume": 0
+    }
+    latest_snapshot = None
+
     while True:
-        data = await loop.sock_recv(sock, 1024)
+        try:
+            while True:
+                data = sock.recv(1024)
+                msg_type, msg_size = struct.unpack(HDR_FORMAT, data[:HDR_SIZE])
+                payload = data[HDR_SIZE : HDR_SIZE + msg_size]
 
-        msg_type, msg_size = struct.unpack(HDR_FORMAT, data[:HDR_SIZE])
-        payload = data[HDR_SIZE : HDR_SIZE + msg_size]
+                if msg_type == 1:
+                    open, high, low, close, vol, is_active = struct.unpack('<QQQQIB', payload)
 
-        if msg_type == 1:
-            maker, taker, price, qty, ts = struct.unpack('<QQQIQ', payload)
+                    current_candle["open"] = open
+                    current_candle["high"] = high
+                    current_candle["low"] = low
+                    current_candle["close"] = close
+                    current_candle["volume"] = vol
+                elif msg_type == 2:
+                    latest_snapshot = payload
 
-            packet = {
-                "type": "TRADE",
-                "maker_id": maker,
-                "taker_id": taker,
-                "price": price,
-                "quantity": qty
-            }
+        except BlockingIOError:
+            pass
 
-            # print(f"🟢 TRADE | Price: {price:4} | Qty: {qty:3} | Maker: {maker:4} vs Taker: {taker:4}")
-        if msg_type == 2:
-            num_bids, num_asks, bids, asks = parse_snapshot(payload)
-            # print_snapshot(num_bids, num_asks, bids, asks)
-
-            packet = {
-                "type": "SNAPSHOT",
-                "num_bids": num_bids,
-                "num_asks": num_asks,
-                "bids": [{"price": p, "qty": q} for p, q in bids[:num_bids]],
-                "asks": [{"price": p, "qty": q} for p, q in asks[:num_asks]]
-            }
         if clients:
-            json_packet = json.dumps(packet)
-            await asyncio.gather(*(client.send(json_packet) for client in clients))
+            if current_candle["close"] is not None:
+                candle_packet = {
+                    "type": "CANDLE",
+                    "data": current_candle
+                }
+
+                websockets.broadcast(clients, json.dumps(candle_packet))
+            if latest_snapshot is not None:
+                num_bids, num_asks, bids, asks = parse_snapshot(latest_snapshot)
+                snapshot_packet = {
+                    "type": "SNAPSHOT",
+                    "num_bids": num_bids,
+                    "num_asks": num_asks,
+                    "bids": [{"price": p, "qty": q} for p, q in bids[:num_bids]],
+                    "asks": [{"price": p, "qty": q} for p, q in asks[:num_asks]]
+                }
+
+                websockets.broadcast(clients, json.dumps(snapshot_packet))
+                latest_snapshot = None
+
+        await asyncio.sleep(0.005)
 
 async def handle_client(websocket, path=""):
     print("New client")

@@ -25,25 +25,21 @@ export const Chart = ({ latestTrade }) => {
         if (!latestTrade || !candlestickSeriesRef.current) return;
 
         const tradeTime = Math.floor(Date.now() / 100);
-        const price = Number(latestTrade.price);
+        const data = latestTrade.data;
 
-        if (!currentBarRef.current || currentBarRef.current.time !== tradeTime) {
-            // If there is a previous candle use its Close as new Open
-            const newOpen = currentBarRef.current ? currentBarRef.current.close : price;
-
-            // Create the new candle
+        if (!currentBarRef.current || currentBarRef.current.time != tradeTime) {
+            const openPrice = currentBarRef.current ? currentBarRef.current.close : data.open;
             currentBarRef.current = {
                 time: tradeTime,
-                open: newOpen,
-                high: Math.max(newOpen, price),
-                low: Math.min(newOpen, price),
-                close: price,
-            };
+                open: openPrice,
+                high: Math.max(openPrice, data.high),
+                low: Math.min(openPrice, data.low),
+                close: data.close
+            }
         } else {
-            // Update the existing candle
-            currentBarRef.current.high = Math.max(currentBarRef.current.high, price);
-            currentBarRef.current.low = Math.min(currentBarRef.current.low, price);
-            currentBarRef.current.close = price;
+            currentBarRef.current.high = Math.max(currentBarRef.current.high, data.high);
+            currentBarRef.current.low = Math.min(currentBarRef.current.low, data.low);
+            currentBarRef.current.close = data.close;
         }
 
         candlestickSeriesRef.current.update(currentBarRef.current);

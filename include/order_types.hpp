@@ -21,7 +21,7 @@ enum Side : uint8_t {
 };
 
 enum MsgType : uint8_t {
-    MSG_TRADE = 1,
+    MSG_CANDLE = 1,
     MSG_BOOK_SNAPSHOT = 2
 };
 
@@ -42,6 +42,15 @@ struct __attribute__((packed)) BookSnapshot {
     uint8_t num_asks;
     PriceLevel bids[10];
     PriceLevel asks[10];
+};
+
+struct __attribute__((packed)) Candle {
+    uint64_t open = 0;
+    uint64_t high = 0;
+    uint64_t low = -1;
+    uint64_t close = 0;
+    uint32_t volume = 0;
+    bool is_active = false;
 };
 
 struct __attribute__((packed)) Trade {
@@ -99,9 +108,9 @@ struct __attribute__((packed)) MsgHdr {
     uint16_t size;
 };
 
-struct __attribute__((packed)) TradePacket {
+struct __attribute__((packed)) CandlePacket {
     MsgHdr header;
-    Trade payload;
+    Candle payload;
 };
 
 struct __attribute__((packed)) SnapshotPacket {

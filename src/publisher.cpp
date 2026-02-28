@@ -2,13 +2,6 @@
 #include "main.hpp"
 #include "gateway.hpp"
 
-#include <cstring>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-
-
 Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename)
     : book(_book),
       matchBuffer(_matchBuffer),
@@ -40,6 +33,40 @@ void printSnapshot(std::ofstream& outFile, BookSnapshot snapshot) {
         outFile << "--";
     }
     outFile << "\n\n";
+}
+
+void update_candle(Trade trade, Candle& current_candle) {
+    if (!current_candle.is_active) {
+        current_candle.open = trade.price;
+        current_candle.is_active = true;
+    }
+
+    current_candle.high = std::max(current_candle.high, trade.price);
+    current_candle.low = std::min(current_candle.low, trade.price);
+    current_candle.close = trade.price;
+
+    current_candle.volume += trade.quantity;
+}
+
+void Publisher::send_snapshot(int sockfd, sockaddr_in servaddr) {
+    BookSnapshot snapshot = book.getBookSnapshot();
+
+    SnapshotPacket packet;
+    packet.header.type = MsgType::MSG_BOOK_SNAPSHOT;
+    packet.header.size = sizeof(BookSnapshot);
+
+    packet.payload = snapshot;
+    sendto(sockfd, &packet, sizeof(SnapshotPacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+}
+
+void Publisher::send_candle(int sockfd, sockaddr_in servaddr, Candle current_candle) {
+    CandlePacket packet;
+    packet.header.type = MsgType::MSG_CANDLE;
+    packet.header.size = sizeof(Candle);
+
+    packet.payload = current_candle;
+
+    sendto(sockfd, &packet, sizeof(CandlePacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
 
 }
 
@@ -62,33 +89,27 @@ void Publisher::run() {
     Trade trade;
     auto interval = std::chrono::milliseconds(50);
     auto next_send_time = std::chrono::high_resolution_clock::now();
+
+    Candle current_candle;
     while (running) {
         auto now = std::chrono::high_resolution_clock::now();
-        if (now >= next_send_time) {
-            BookSnapshot snapshot = book.getBookSnapshot();
-
-            SnapshotPacket packet;
-            packet.header.type = MsgType::MSG_BOOK_SNAPSHOT;
-            packet.header.size = sizeof(BookSnapshot);
-
-            packet.payload = snapshot;
-            sendto(sockfd, &packet, sizeof(SnapshotPacket) , 0, (const sockaddr *)&servaddr, sizeof(servaddr));
-
-            next_send_time += interval;
-        }
-
         if (!matchBuffer.is_empty()) {
             matchBuffer.pop(trade);
 
-            TradePacket packet;
-            packet.header.type = MsgType::MSG_TRADE;
-            packet.header.size = sizeof(Trade);
-
-            packet.payload = trade;
-
-            sendto(sockfd, &packet, sizeof(TradePacket) , 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+            update_candle(trade, current_candle);
         } else {
             std::this_thread::yield();
+        }
+
+        if (now >= next_send_time) {
+            send_snapshot(sockfd, servaddr);
+
+            if (current_candle.is_active) {
+                send_candle(sockfd, servaddr, current_candle);
+                current_candle = Candle();
+            }
+
+            next_send_time += interval;
         }
     }
 

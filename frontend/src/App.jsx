@@ -28,7 +28,7 @@ function App(props) {
 
             if (data.type == "SNAPSHOT") {
               setSnapshot(data);
-            } else if (data.type == "TRADE") {
+            } else if (data.type == "CANDLE") {
               setLatestTrade(data)
             }
         };
