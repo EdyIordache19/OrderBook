@@ -55,6 +55,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Blasting " << numOrders << " orders in batches of " << batchSize << "..." << std::endl;
 
     int mid_price = 1000;
+    std::ifstream price_in(".last_price.txt");
+    if (price_in.good()) {
+        price_in >> mid_price;
+    }
+    price_in.close();
+
     for (uint64_t i = 0; i < numOrders; i += batchSize) {
         for (int j = 0; j < batchSize; j++) {
             memset(&iovecs[j], 0, sizeof(iovecs[j]));
@@ -105,6 +111,13 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "Done." << std::endl;
+
+    std::ofstream price_out(".last_price.txt");
+    if (price_out.good()) {
+        price_out << mid_price;
+    }
+    price_out.close();
+
     close(sockfd);
     return 0;
 }

@@ -9,7 +9,6 @@ set -e
 
 echo "Building C++ project..."
 cd build
-rm -f .last_time.txt 2>/dev/null
 make -j$(nproc)
 cd ..
 
@@ -39,6 +38,8 @@ cleanup() {
     for pid in $(jobs -p); do
         kill_tree $pid
     done
+
+    rm -f .last_time.txt .last_price.txt 2>/dev/null
 
     exit 0
 }

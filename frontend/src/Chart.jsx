@@ -15,6 +15,10 @@ export const Chart = ({ latestTrade }) => {
                 textColor: '#d1d4dc'
             },
             grid: { vertLines: { color: '#2b2b43' }, horzLines: { color: '#2b2b43' } },
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: true,
+            },
         });
 
         candlestickSeriesRef.current = chart.addSeries(CandlestickSeries);

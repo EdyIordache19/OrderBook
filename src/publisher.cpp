@@ -93,6 +93,7 @@ void Publisher::run() {
     time_t timestamp;
     time(&timestamp);
     uint64_t logical_time = (uint64_t)timestamp;
+    logical_time += 60*60*2; // From UTC to UTC+2
     std::ifstream time_in(".last_time.txt");
     if (time_in.good()) {
         time_in >> logical_time;
