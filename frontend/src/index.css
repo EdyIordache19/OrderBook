@@ -47,6 +47,17 @@ body {
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
 }
 
+#bids-asks-div {
+    margin-top: 20px;
+    width: auto !important;
+    height: 100px;
+    padding: 20px;
+
+    background-color: #181c27;
+    border: 1px solid #2b2b43;
+    border-radius: 8px;
+}
+
 .orderbook {
     width: 100% !important; /* Overrides inline React style */
     font-family: 'Roboto Mono', 'Fira Code', 'Courier New', monospace; /* Monospace for numbers */
