@@ -83,10 +83,10 @@ async def udp_listener():
                 "quantity": qty
             }
 
-            print(f"🟢 TRADE | Price: {price:4} | Qty: {qty:3} | Maker: {maker:4} vs Taker: {taker:4}")
+            # print(f"🟢 TRADE | Price: {price:4} | Qty: {qty:3} | Maker: {maker:4} vs Taker: {taker:4}")
         if msg_type == 2:
             num_bids, num_asks, bids, asks = parse_snapshot(payload)
-            print_snapshot(num_bids, num_asks, bids, asks)
+            # print_snapshot(num_bids, num_asks, bids, asks)
 
             packet = {
                 "type": "SNAPSHOT",

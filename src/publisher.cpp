@@ -75,8 +75,6 @@ void Publisher::run() {
             sendto(sockfd, &packet, sizeof(SnapshotPacket) , 0, (const sockaddr *)&servaddr, sizeof(servaddr));
 
             next_send_time += interval;
-
-            printSnapshot(outFile, snapshot);
         }
 
         if (!matchBuffer.is_empty()) {
@@ -87,13 +85,6 @@ void Publisher::run() {
             packet.header.size = sizeof(Trade);
 
             packet.payload = trade;
-
-            // BookSnapshot snapshot = book.getBookSnapshot();
-
-            // outFile << "Maker ID: " << trade.maker_id << ", ";
-            // outFile << "Taker ID: " << trade.taker_id << ", ";
-            // outFile << "Price: " << trade.price << ", ";
-            // outFile << "Quantity: " << trade.quantity << "\n";
 
             sendto(sockfd, &packet, sizeof(TradePacket) , 0, (const sockaddr *)&servaddr, sizeof(servaddr));
         } else {
