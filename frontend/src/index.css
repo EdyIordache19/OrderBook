@@ -23,17 +23,12 @@ body {
 }
 
 /* --- Main Layout --- */
-#footer {
+#main-div {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
     padding: 20px 40px;
     gap: 40px; /* Space between chart and orderbook */
-}
-
-/* Hide the hardcoded break tag to allow Flexbox to handle the layout */
-#footer br {
-    display: none;
 }
 
 /* --- Orderbook Panel --- */

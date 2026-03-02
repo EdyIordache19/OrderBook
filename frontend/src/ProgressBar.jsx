@@ -7,6 +7,8 @@ const formatQty = (qty) => {
 };
 
 const ProgressBar = ({ snapshot }) => {
+  if (!snapshot) return <div>Loading...</div>;
+
   const totalAsks = snapshot.asks.reduce((acc, ask) => acc + Number(ask.qty), 0);
   const totalBids = snapshot.bids.reduce((acc, bid) => acc + Number(bid.qty), 0);
   const combinedTotal = totalAsks + totalBids;
