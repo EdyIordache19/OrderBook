@@ -53,6 +53,10 @@ body {
     border-radius: 8px;
 }
 
+#dom-div {
+    padding: 20px 40px;
+}
+
 .orderbook {
     width: 100% !important; /* Overrides inline React style */
     font-family: 'Roboto Mono', 'Fira Code', 'Courier New', monospace; /* Monospace for numbers */

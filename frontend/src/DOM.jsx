@@ -104,6 +104,18 @@ export const DOM = ({ snapshot }) => {
                 timeVisible: true,
                 secondsVisible: true,
             },
+            rightPriceScale: {
+                scaleMargins: {
+                    top: 0.2,
+                    bottom: 0,
+                },
+            },
+            handleScale: {
+                axisPressedMouseMove: {
+                    time: true,
+                    price: false,
+                },
+            },
         });
 
         askSeriesRef.current = chartRef.current.addSeries(AreaSeries, {
@@ -112,7 +124,7 @@ export const DOM = ({ snapshot }) => {
             },
             lineColor: '#F6465D',
             topColor: '#F6465D',
-            bottomColor: '#F6465D',
+            bottomColor: '#46141a95',
             priceScaleId: 'right',
             lineType: LineType.WithSteps,
         });
@@ -123,7 +135,7 @@ export const DOM = ({ snapshot }) => {
             },
             lineColor: '#0ECB81',
             topColor: '#0ECB81',
-            bottomColor: '#0ECB81',
+            bottomColor: '#0750346c',
             priceScaleId: 'right',
             lineType: LineType.WithSteps,
         });
