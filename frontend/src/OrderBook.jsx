@@ -11,10 +11,10 @@ const OrderBook = ({ snapshot }) => {
                     <th>PRICE</th>
                 </tr>
             </thead>
-            <tbody id='snapshot-body'>
+            <tbody className="orderbook-body">
                 {/* Asks (Red) */}
                 {snapshot.asks.slice().reverse().map((ask, i) => (
-                    <tr key={`ask-${i}`} style={{ color: 'red' }}>
+                    <tr key={`ask-${i}`} className="row-ask">
                         <td>{ask.qty}</td>
                         <td>{ask.price}</td>
                     </tr>
@@ -27,7 +27,7 @@ const OrderBook = ({ snapshot }) => {
 
                 {/* Bids (Green) */}
                 {snapshot.bids.map((bid, i) => (
-                    <tr key={`bid-${i}`} style={{ color: 'green' }}>
+                    <tr key={`bid-${i}`} className="row-bid">
                         <td>{bid.qty}</td>
                         <td>{bid.price}</td>
                     </tr>

@@ -2,19 +2,19 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: #131722; /* Matches Lightweight Charts background */
+    background-color: #131722;
     color: #d1d4dc;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
 /* --- Header --- */
-#header {
+.app-header {
     padding: 20px 40px;
-    background-color: #181c27; /* Slightly lighter panel color */
+    background-color: #181c27;
     border-bottom: 1px solid #2b2b43;
 }
 
-#title-text {
+.title-text {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
@@ -22,57 +22,65 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* --- Main Layout --- */
-#main-div {
+/* --- Main Layout Sections --- */
+.layout-row {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
     padding: 20px 40px;
-    gap: 40px; /* Space between chart and orderbook */
+    gap: 40px;
 }
 
-/* --- Orderbook Panel --- */
-#snapshot-div {
+.layout-bottom-row {
+    padding-top: 0px;
+}
+
+/* --- Left Side: Charts (Fluid Width) --- */
+.chart-container {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+}
+
+/* --- Right Side: Panels (Fixed Width) --- */
+.side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 320px;
+    flex-shrink: 0;
+}
+
+/* --- Reusable Panel Styling --- */
+.panel {
     background-color: #181c27;
     border: 1px solid #2b2b43;
     border-radius: 8px;
     padding: 20px;
-    width: auto !important; /* Overrides inline React style */
-    min-width: 250px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    box-sizing: border-box;
+    width: 100%;
 }
 
-#bids-asks-div {
-    margin-top: 20px;
-    width: auto !important;
-    height: 100px;
-    padding: 20px;
-
-    background-color: #181c27;
-    border: 1px solid #2b2b43;
-    border-radius: 8px;
+.progress-panel {
+    height: 125px;
 }
 
-#dom-div {
-    padding: 20px 40px;
-}
-
+/* --- Orderbook Specifics --- */
 .orderbook {
-    width: 100% !important; /* Overrides inline React style */
-    font-family: 'Roboto Mono', 'Fira Code', 'Courier New', monospace; /* Monospace for numbers */
+    width: 100% !important;
+    font-family: 'Roboto Mono', 'Fira Code', 'Courier New', monospace;
     font-variant-numeric: tabular-nums;
 }
 
-/* Table Headers */
 .orderbook th {
     text-align: right;
     padding: 0 10px 15px 10px;
-    color: #848E9C; /* Subtle gray for labels */
+    color: #848E9C;
     font-size: 14px;
     font-weight: 500;
 }
 
-/* Table Cells */
 .orderbook td {
     text-align: right;
     padding: 4px 10px;
@@ -80,18 +88,15 @@ body {
     font-weight: 500;
 }
 
-/* Modern Trading Colors
-  (Using !important to cleanly override the inline style={{ color: 'red' }} in React)
-*/
-tbody#snapshot-body tr[style*="red"] {
-    color: #F6465D !important;
+/* Replaced inline styles with clean CSS classes */
+.orderbook-body .row-ask {
+    color: #F6465D;
 }
 
-tbody#snapshot-body tr[style*="green"] {
-    color: #0ECB81 !important;
+.orderbook-body .row-bid {
+    color: #0ECB81;
 }
 
-/* Spread Separator */
 .orderbook tr.spread td {
-    height: 20px; /* Gives some breathing room between asks and bids */
+    height: 20px;
 }

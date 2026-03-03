@@ -4,6 +4,7 @@ import Chart from "./Chart";
 import Header from "./Header";
 import ProgressBar from './ProgressBar';
 import DOM from './DOM';
+import TradePanel from './TradePanel';
 
 function App(props) {
     const [snapshot, setSnapshot] = useState(null);
@@ -27,25 +28,35 @@ function App(props) {
 
     return (
         <div>
-            <div id="header">
+            <div className="app-header">
                 <Header />
             </div>
-            <div id="footer">
-                <div id="main-div">
-                    <div id="chart-div">
+            {/* Renamed "footer" to "main-content" because it holds the core layout */}
+            <div className="main-content">
+                <div className="layout-row">
+                    <div className="chart-container">
                         <Chart latestTrade={latestTrade}></Chart>
                     </div>
-                    <div id="right-side">
-                        <div id="snapshot-div" style={{ width: '300px' }}>
-                            <OrderBook id="snapshot" snapshot={snapshot} />
-                        </div>
-                        <div id="bids-asks-div">
-                            <ProgressBar snapshot={snapshot} />
+
+                    <div className="side-column">
+                        <div className="panel">
+                            <TradePanel />
                         </div>
                     </div>
                 </div>
-                <div id="dom-div">
-                    <DOM snapshot={snapshot} />
+
+                <div className="layout-row layout-bottom-row">
+                    <div className="chart-container">
+                        <DOM snapshot={snapshot} />
+                    </div>
+                    <div className="side-column">
+                        <div className="panel">
+                            <OrderBook snapshot={snapshot} />
+                        </div>
+                        <div className="panel progress-panel">
+                            <ProgressBar snapshot={snapshot} />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
