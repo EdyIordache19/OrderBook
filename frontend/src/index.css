@@ -56,14 +56,14 @@ body {
     background-color: #181c27;
     border: 1px solid #2b2b43;
     border-radius: 8px;
-    padding: 20px;
+    padding: 10px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     box-sizing: border-box;
     width: 100%;
 }
 
 .progress-panel {
-    height: 125px;
+    height: 115px;
 }
 
 /* --- Orderbook Specifics --- */
@@ -99,4 +99,95 @@ body {
 
 .orderbook tr.spread td {
     height: 20px;
+}
+
+/* --- Trade Panel Layout --- */
+#trading-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 25px; /* Spacing between buttons and inputs */
+}
+
+/* --- Buttons --- */
+.buttons-div {
+    display: flex;
+    gap: 15px; /* Space between the two buttons */
+    width: 100%;
+}
+
+button {
+    flex: 1; /* Makes both buttons take up exactly 50% of the available width */
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase; /* Removed the quotes you had here */
+    letter-spacing: 0.5px;
+    padding: 12px 20px;
+    color: white;
+    cursor: pointer;
+    transition: opacity 0.2s ease; /* Smooth hover effect */
+}
+
+button:hover {
+    opacity: 0.85;
+}
+
+button:active {
+    opacity: 0.7;
+}
+
+#buy-button {
+    background-color: #0ECB81;
+}
+
+#sell-button {
+    background-color: #F6465D;
+}
+
+/* --- Input Fields --- */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.input-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-field label {
+    color: #848E9C;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input-field input {
+    background-color: #131722; /* Matches the deepest background */
+    border: 1px solid #2b2b43;
+    border-radius: 4px;
+    color: #d1d4dc;
+    padding: 12px;
+    font-family: 'Roboto Mono', 'Fira Code', 'Courier New', monospace; /* Monospace for numbers */
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.input-field input:focus {
+    border-color: #848E9C; /* Subtle highlight when user clicks into the input */
+}
+
+/* Hide up/down arrows on number inputs for a cleaner trading UI */
+.input-field input::-webkit-outer-spin-button,
+.input-field input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.input-field input[type=number] {
+    -moz-appearance: textfield; /* Firefox fallback */
 }

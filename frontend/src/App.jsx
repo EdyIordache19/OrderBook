@@ -39,7 +39,7 @@ function App(props) {
                     </div>
 
                     <div className="side-column">
-                        <div className="panel">
+                        <div className="panel" id='trading-panel'>
                             <TradePanel />
                         </div>
                     </div>
