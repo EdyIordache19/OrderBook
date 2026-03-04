@@ -19,7 +19,7 @@
 std::atomic<uint64_t> shared_price{1000};
 std::atomic<bool> running{true};
 
-void listen_for_trade(float alpha) {
+void listen_for_trade() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     sockaddr_in servaddr;
@@ -55,8 +55,9 @@ void listen_for_trade(float alpha) {
                 if (packet->payload.price >= (MAX_PRICE - 1000) || packet->payload.price == 0) {
                     new_price = current_price;
                 } else {
-                    new_price = (alpha * packet->payload.price) + ((1.0f - alpha) * current_price);
+                    new_price = packet->payload.price;
                 }
+
                 shared_price.store(new_price, std::memory_order_relaxed);
             }
         }
@@ -81,7 +82,6 @@ int main(int argc, char *argv[]) {
 
     uint64_t numOrders = result["num-orders"].as<uint64_t>();
     uint16_t batchSize = result["batch-size"].as<uint16_t>();
-    float alpha = result["alpha"].as<float>();
 
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in servaddr;
@@ -113,10 +113,12 @@ int main(int argc, char *argv[]) {
     price_in.close();
 
     shared_price.store(initial_price, std::memory_order_relaxed);
-    std::thread listener(listen_for_trade, alpha);
+    std::thread listener(listen_for_trade);
 
     for (uint64_t i = 0; i < numOrders; i += batchSize) {
         uint64_t current_mid = shared_price.load(std::memory_order_relaxed);
+        uint64_t net_drift = 0;
+
         for (int j = 0; j < batchSize; j++) {
             memset(&iovecs[j], 0, sizeof(iovecs[j]));
             iovecs[j].iov_base = &msgs[j];
@@ -130,9 +132,13 @@ int main(int argc, char *argv[]) {
 
             msgs[j].id = i + j;
 
-            std::uniform_int_distribution price_dist(current_mid - 10, current_mid + 10);
+            std::uniform_int_distribution<int64_t> price_dist(
+                static_cast<int64_t>(current_mid) - 10,
+                static_cast<int64_t>(current_mid) + 10
+            );
+
             msgs[j].price = static_cast<uint64_t>(
-                std::min(std::max(price_dist(gen), 0ul), static_cast<uint64_t>(MAX_PRICE - 1))
+                std::min(std::max(price_dist(gen), 0L), static_cast<int64_t>(MAX_PRICE - 1))
             );
 
             msgs[j].quantity = qty_dist(gen);
@@ -140,7 +146,9 @@ int main(int argc, char *argv[]) {
             msgs[j].tif = tif_dist(gen);
             msgs[j].type = 0;
 
-            current_mid += mid_price_movement(gen);
+            uint64_t drift = mid_price_movement(gen);
+            current_mid += drift;
+            net_drift += drift;
         }
 
         int ret = sendmmsg(sockfd, msgvec, batchSize, 0);
@@ -149,7 +157,8 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        shared_price.store(current_mid, std::memory_order_relaxed);
+        shared_price.fetch_add(net_drift, std::memory_order_relaxed);
+        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     running.store(false);

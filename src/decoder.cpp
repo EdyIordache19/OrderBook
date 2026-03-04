@@ -12,7 +12,7 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
     order.price = message->price;
     order.quantity = message->quantity;
 
-    if (message->side == 'B') order.side = Side::BUY;
+    if (message->side == 'B' || message->side == 0) order.side = Side::BUY;
     else order.side = Side::SELL;
 
     if (message->type == 0) order.type = OrderType::LIMIT;

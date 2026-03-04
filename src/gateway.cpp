@@ -72,7 +72,7 @@ void Gateway::run() {
             while (ordersBuffer.push(order) != 0);
 
             orders_received++;
-            if (orders_received >= numOrders) {
+            if (orders_received >= numOrders || order.type == OrderType::KILL) {
                 std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
                 auto end = std::chrono::high_resolution_clock::now();
 
@@ -82,11 +82,7 @@ void Gateway::run() {
                 std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
                 std::cout << "Throughput: " << throughput << " orders/second. \n";
 
-            }
-
-            if (order.type == OrderType::KILL) {
                 running.store(false, std::memory_order_release);
-                running = false;
                 break;
             }
         }
