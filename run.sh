@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Prompt for alpha for client
+echo "What alpha do you want to generate your random price?"
+read alpha
+
 # Prompt for the initial number of orders
 echo "How many orders do you want to simulate?"
 read num_orders
@@ -79,8 +83,8 @@ run_simulation() {
     # Wait a fraction of a second for the orderbook to bind its UDP sockets
     sleep 1
 
-    echo "Starting C++ Client to pump $orders orders..."
-    ./client -n $orders
+    echo "Starting C++ Client to pump $orders orders with $alpha alpha..."
+    ./client -n $orders -a $alpha
 
     echo "Client finished dispatching orders."
 
@@ -98,18 +102,24 @@ do
     echo "What do you want to do now?"
     echo "1. Run again ($num_orders orders)"
     echo "2. Run again (Different number of orders)"
-    echo "3. Exit"
-    read -p "Enter choice [1-3]: " choice
+    echo "3. Run again (Different alpha)"
+    echo "4. Exit"
+    read -p "Enter choice [1-4]: " choice
 
     if [ "$choice" -eq 1 ]; then
-        run_simulation $num_orders
+        run_simulation $num_orders $alpha
 
     elif [ "$choice" -eq 2 ]; then
         echo "How many orders do you want to simulate?"
         read num_orders
-        run_simulation $num_orders
+        run_simulation $num_orders $alpha
 
     elif [ "$choice" -eq 3 ]; then
+        echo "What alpha do you want to generate the random price?"
+        read alpha
+        run_simulation $num_orders $alpha
+
+    elif [ "$choice" -eq 4 ]; then
         echo "Exiting..."
         cleanup
 

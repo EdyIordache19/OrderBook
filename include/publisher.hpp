@@ -21,6 +21,7 @@ private:
 
     void send_snapshot(int sockfd, sockaddr_in servaddr);
     void send_candle(int sockfd, sockaddr_in servaddr, Candle current_candle);
+    void send_trade(int sockfd, sockaddr_in servaddr, Trade current_trade);
 public:
     Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename);
     void run();

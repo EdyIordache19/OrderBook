@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <vector>
 #include <random>
+#include <atomic>
+#include <thread>
 
 #include "../include/orderbook.hpp"
 #include "../include/order_types.hpp"
@@ -14,13 +16,61 @@
 
 #include "../include/cxxopts.hpp"
 
+std::atomic<uint64_t> shared_price{1000};
+std::atomic<bool> running{true};
+
+void listen_for_trade(float alpha) {
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    sockaddr_in servaddr;
+
+    int reuse = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(5000);
+    servaddr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(sockfd, (sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+        perror("Failed to bind socket");
+        return;
+    }
+
+    ip_mreq group;
+    group.imr_multiaddr.s_addr = inet_addr("239.0.0.1");
+    group.imr_interface.s_addr = INADDR_ANY;
+    setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char *)&group, sizeof(group));
+
+    char buffer[65536];
+
+    while (running.load()) {
+        ssize_t n = recv(sockfd, buffer, sizeof(buffer), 0);
+
+        if (n == sizeof(TradePacket)) {
+            TradePacket *packet = reinterpret_cast<TradePacket *>(buffer);
+            if (packet->header.type == MsgType::MSG_TRADE) {
+                int current_price = shared_price.load(std::memory_order_relaxed);
+
+                int new_price;
+                if (packet->payload.price >= (MAX_PRICE - 1000) || packet->payload.price == 0) {
+                    new_price = current_price;
+                } else {
+                    new_price = (alpha * packet->payload.price) + ((1.0f - alpha) * current_price);
+                }
+                shared_price.store(new_price, std::memory_order_relaxed);
+            }
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     cxxopts::Options options("UDP-Client", "UDP Server for sending orders");
 
     options.add_options()
         ("h, help", "Print usage")
         ("n, num-orders", "Number of orders to send", cxxopts::value<uint64_t>()->default_value("1000000"))
-        ("b, batch-size", "Size of batches to send orders", cxxopts::value<uint16_t>()->default_value("100"));
+        ("b, batch-size", "Size of batches to send orders", cxxopts::value<uint16_t>()->default_value("100"))
+        ("a, alpha", "Alpha that dictates how much last traded price influences market", cxxopts::value<float>()->default_value("0.5"));
 
     auto result = options.parse(argc, argv);
 
@@ -31,6 +81,7 @@ int main(int argc, char *argv[]) {
 
     uint64_t numOrders = result["num-orders"].as<uint64_t>();
     uint16_t batchSize = result["batch-size"].as<uint16_t>();
+    float alpha = result["alpha"].as<float>();
 
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in servaddr;
@@ -47,21 +98,25 @@ int main(int argc, char *argv[]) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> mid_price_movement(-1, 1);
-    std::uniform_int_distribution<> qty_dist(1, 100);
+    std::uniform_int_distribution<> qty_dist(1, 500);
     std::uniform_int_distribution<> side_dist(0, 1);
     std::uniform_int_distribution<> tif_dist(0, 2);
     std::uniform_int_distribution<> type_dist(0, 2);
 
     std::cout << "Blasting " << numOrders << " orders in batches of " << batchSize << "..." << std::endl;
 
-    int mid_price = 1000;
+    int initial_price = 5000;
     std::ifstream price_in(".last_price.txt");
     if (price_in.good()) {
-        price_in >> mid_price;
+        price_in >> initial_price;
     }
     price_in.close();
 
+    shared_price.store(initial_price, std::memory_order_relaxed);
+    std::thread listener(listen_for_trade, alpha);
+
     for (uint64_t i = 0; i < numOrders; i += batchSize) {
+        uint64_t current_mid = shared_price.load(std::memory_order_relaxed);
         for (int j = 0; j < batchSize; j++) {
             memset(&iovecs[j], 0, sizeof(iovecs[j]));
             iovecs[j].iov_base = &msgs[j];
@@ -75,14 +130,17 @@ int main(int argc, char *argv[]) {
 
             msgs[j].id = i + j;
 
-            std::uniform_int_distribution price_dist(mid_price - 1, mid_price + 1);
-            msgs[j].price = std::min(std::max(price_dist(gen), 0), MAX_PRICE - 1);
+            std::uniform_int_distribution price_dist(current_mid - 10, current_mid + 10);
+            msgs[j].price = static_cast<uint64_t>(
+                std::min(std::max(price_dist(gen), 0ul), static_cast<uint64_t>(MAX_PRICE - 1))
+            );
+
             msgs[j].quantity = qty_dist(gen);
             msgs[j].side = side_dist(gen) == 0 ? 'B' : 'S';
             msgs[j].tif = tif_dist(gen);
             msgs[j].type = 0;
 
-            mid_price += mid_price_movement(gen);
+            current_mid += mid_price_movement(gen);
         }
 
         int ret = sendmmsg(sockfd, msgvec, batchSize, 0);
@@ -90,7 +148,11 @@ int main(int argc, char *argv[]) {
             std::cout << "ERROR WITH SENDMMSG\n";
             break;
         }
+
+        shared_price.store(current_mid, std::memory_order_relaxed);
     }
+
+    running.store(false);
 
     WireMessage killMessage;
 
@@ -114,10 +176,12 @@ int main(int argc, char *argv[]) {
 
     std::ofstream price_out(".last_price.txt");
     if (price_out.good()) {
-        price_out << mid_price;
+        price_out << shared_price.load();
     }
     price_out.close();
 
     close(sockfd);
+
+    listener.detach();
     return 0;
 }

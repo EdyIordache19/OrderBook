@@ -67,7 +67,16 @@ void Publisher::send_candle(int sockfd, sockaddr_in servaddr, Candle current_can
     packet.payload = current_candle;
 
     sendto(sockfd, &packet, sizeof(CandlePacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+}
 
+void Publisher::send_trade(int sockfd, sockaddr_in servaddr, Trade current_trade) {
+    TradePacket packet;
+    packet.header.type = MsgType::MSG_TRADE;
+    packet.header.size = sizeof(Trade);
+
+    packet.payload = current_trade;
+
+    sendto(sockfd, &packet, sizeof(TradePacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
 }
 
 void Publisher::run() {
@@ -113,6 +122,7 @@ void Publisher::run() {
 
         if (now >= next_send_time) {
             send_snapshot(sockfd, servaddr);
+            send_trade(sockfd, servaddr, trade);
 
             if (current_candle.is_active) {
                 current_candle.simulated_time = logical_time;
