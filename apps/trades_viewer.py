@@ -4,6 +4,7 @@ import websockets
 import asyncio
 import json
 import time
+import random
 
 MCAST_GRP = '239.0.0.1'
 MCAST_PORT = 5000
@@ -121,11 +122,28 @@ async def udp_listener():
 
         await asyncio.sleep(0.005)
 
+engine_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+ENGINE_ADDRESS = ('127.0.0.1', 1234)
+
 async def handle_client(websocket, path=""):
     print("New client")
     clients.add(websocket)
     try:
-        await websocket.wait_closed()
+        async for message in websocket:
+            data = json.loads(message)
+
+            random_id = random.randint(100000, 999999)
+            if data.get("action") == "PLACE_ORDER":
+                payload = struct.pack("<QQIBBB",
+                                      random_id,
+                                      data['price'],
+                                      data['quantity'],
+                                      data['side'],
+                                      data['tif'],
+                                      data['type'])
+
+                engine_sock.sendto(payload, ENGINE_ADDRESS)
+                print(f"Sent manual order to engine: {data}")
     finally:
         print("Client disconnected")
         clients.remove(websocket)

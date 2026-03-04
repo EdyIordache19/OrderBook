@@ -209,7 +209,8 @@ uint32_t OrderBook::processOrder(Order& incoming) {
         incoming.quantity -= tradeQuantity;
         order->quantity -= tradeQuantity;
 
-        Trade trade(incoming.id, order->id, incoming.price, tradeQuantity, incoming.timestamp);
+        uint64_t tradePrice = incoming.side == Side::BUY ? maxBid : minAsk;
+        Trade trade(incoming.id, order->id, order->price, tradeQuantity, incoming.timestamp);
         matchBuffer.push(trade);
 
         if (order->quantity == 0) {

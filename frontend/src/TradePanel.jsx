@@ -1,13 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const TradePanel = () => {
-    // State to hold the user's input values
     const [price, setPrice] = useState('');
     const [quantity, setQuantity] = useState('');
+    const [websocket, setWebsocket] = useState('');
+
+    useEffect(() => {
+        const websocket = new WebSocket("ws://localhost:8765");
+
+        setWebsocket(websocket);
+        return () => websocket.close();
+    }, []);
 
     const handleTrade = (type) => {
+        if (!quantity) {
+            console.log("Please enter quantity");
+            alert("Please enter quantity");
+        }
+        if (!price) {
+            console.log("Please enter price");
+            alert("Please enter price");
+        }
+
         console.log(`Executing ${type} order | QTY: ${quantity} | PRICE: ${price}`);
-        // Add your WebSocket or execution logic here
+
+        const order = {
+            action: "PLACE_ORDER",
+            price: parseFloat(price),
+            quantity: parseInt(quantity),
+            side: type == "BUY" ? 0 : 1,
+            tif: 0,
+            type: 0
+        };
+
+        websocket.send(JSON.stringify(order));
     };
 
     return (
