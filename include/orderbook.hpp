@@ -23,7 +23,6 @@ private:
     std::vector<Level> bidOrders;
 
     std::vector<Order*> orderLookup;
-    RingBuffer<Trade>& matchBuffer;
 
     uint32_t activeBidsCount = 0;
     uint32_t activeAsksCount = 0;
@@ -31,12 +30,14 @@ private:
     uint64_t maxBid = 0;
     uint64_t minAsk = MAX_PRICE;
 public:
+    RingBuffer<Trade>& matchBuffer;
+
     OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer);
     void addOrder(Order& order);
     void removeOrder(uint64_t orderId);
     void removeOrder(Order *orderToRemove);
     void matchOrders();
-    uint32_t processOrder(Order& incoming);
+    uint32_t processOrder(Order& incoming, std::vector<Trade>& trades);
     bool canFill(Order& order);
     void printOrders(std::string filename);
     void printOrder(const Order *order, std::ostream& outFile);

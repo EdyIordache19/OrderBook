@@ -166,7 +166,7 @@ void OrderBook::matchOrders() {
     }
 }
 
-uint32_t OrderBook::processOrder(Order& incoming) {
+uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
     if (incoming.type == OrderType::MARKET) {
         incoming.price = incoming.side == Side::BUY ? MAX_PRICE - 1 : 0;
     }
@@ -209,9 +209,9 @@ uint32_t OrderBook::processOrder(Order& incoming) {
         incoming.quantity -= tradeQuantity;
         order->quantity -= tradeQuantity;
 
-        uint64_t tradePrice = incoming.side == Side::BUY ? maxBid : minAsk;
-        Trade trade(incoming.id, order->id, order->price, tradeQuantity, incoming.timestamp);
-        matchBuffer.push(trade);
+        uint64_t tradePrice = incoming.side == Side::BUY ? minAsk : maxBid;
+        Trade trade(incoming.id, order->id, incoming.user_id, order->user_id, order->price, tradeQuantity, incoming.timestamp);
+        trades.push_back(trade);
 
         if (order->quantity == 0) {
             level.head = order->next;

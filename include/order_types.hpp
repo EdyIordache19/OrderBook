@@ -58,15 +58,20 @@ struct __attribute__((packed)) Candle {
 struct __attribute__((packed)) Trade {
     uint64_t maker_id;
     uint64_t taker_id;
+    uint64_t maker_user_id;
+    uint64_t taker_user_id;
+
     uint64_t price;
     uint32_t quantity;
     uint64_t timestamp;
 
     Trade() { }
 
-    Trade(uint64_t _maker_id, uint64_t _taker_id, uint64_t _price, uint32_t _quantity, uint64_t _timestamp) :
+    Trade(uint64_t _maker_id, uint64_t _taker_id, uint64_t _maker_user_id, uint64_t _taker_user_id, uint64_t _price, uint32_t _quantity, uint64_t _timestamp) :
         maker_id(_maker_id),
         taker_id(_taker_id),
+        maker_user_id(_maker_user_id),
+        taker_user_id(_taker_user_id),
         price(_price),
         quantity(_quantity),
         timestamp(_timestamp)
@@ -75,6 +80,7 @@ struct __attribute__((packed)) Trade {
 
 struct alignas(64) Order {
     uint64_t id;
+    uint32_t user_id;
     uint64_t price;
     uint32_t quantity;
     uint64_t timestamp;
@@ -88,8 +94,9 @@ struct alignas(64) Order {
 
     Order() { }
 
-    Order(uint64_t _id, uint64_t _price, uint32_t _quantity, Side _side, OrderType _type) :
+    Order(uint64_t _id, uint32_t _user_id, uint64_t _price, uint32_t _quantity, Side _side, OrderType _type) :
         id(_id),
+        user_id(_user_id),
         price(_price),
         quantity(_quantity),
         side(_side),

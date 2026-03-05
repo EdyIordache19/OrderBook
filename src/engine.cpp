@@ -11,6 +11,9 @@ Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, Or
 
 void Engine::run() {
     pin_thread_to_core(1);
+
+    std::vector<Trade> trades;
+    trades.reserve(256);
     while (running.load(std::memory_order_acquire) || !ordersBuffer.is_empty()) {
         Order order;
         if (!ordersBuffer.pop(order)) {
@@ -22,22 +25,59 @@ void Engine::run() {
                 continue;
             }
 
+            if (order.user_id == 1) {
+                if (order.side == Side::BUY) {
+                    uint64_t cost = order.price * order.quantity;
+                    if (usd_balance < cost) continue;
+                } else {
+                    if (equity_balance < order.quantity) continue;
+                }
+            }
+
+            trades.clear();
+
             if (order.tif == TimeInForce::IOC) {
                 // Just process (match order with book) and dismiss the remainder
-                orderBook.processOrder(order);
+                orderBook.processOrder(order, trades);
             } else if (order.tif == TimeInForce::FOK) {
                 // Check if it can be filled entirely and process order
                 if (orderBook.canFill(order)) {
-                    orderBook.processOrder(order);
+                    orderBook.processOrder(order, trades);
                 }
             } else {
                 // Process order and add remainder to book
-                uint32_t remaining_qty = orderBook.processOrder(order);
+                uint32_t remaining_qty = orderBook.processOrder(order, trades);
 
                 order.quantity = remaining_qty;
                 if (remaining_qty > 0 && order.type != OrderType::MARKET) {
                     orderBook.addOrder(order);
                 }
+            }
+
+            for (Trade &trade : trades) {
+                uint64_t trade_value = trade.price * trade.quantity;
+
+                if (trade.taker_user_id == 1) {
+                    if (order.side == Side::BUY) {
+                        usd_balance -= trade_value;
+                        equity_balance += trade.quantity;
+                    } else {
+                        usd_balance += trade_value;
+                        equity_balance -= trade.quantity;
+                    }
+                }
+
+                if (trade.maker_user_id == 1) {
+                    if (order.side == Side::BUY) {
+                        usd_balance += trade_value;
+                        equity_balance -= trade.quantity;
+                    } else {
+                        usd_balance -= trade_value;
+                        equity_balance += trade.quantity;
+                    }
+                }
+
+                orderBook.matchBuffer.push(trade);
             }
 
             uint64_t now = std::chrono::steady_clock::now().time_since_epoch().count();
