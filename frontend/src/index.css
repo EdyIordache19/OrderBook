@@ -256,3 +256,49 @@ button:active {
     color: #848E9C;
     cursor: not-allowed;
 }
+
+/* --- Order Type Tabs --- */
+.order-type-tabs {
+    display: flex;
+    width: 100%;
+    border-bottom: 2px solid #2b2b43;
+    margin-bottom: 5px;
+}
+
+/* Overriding the global button styles to make these look like clean tabs */
+button.tab-btn {
+    background-color: transparent;
+    color: #848E9C;
+    border-radius: 0;
+    padding: 10px 0;
+    font-size: 13px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px; /* Pulls the border down over the container's border */
+    transition: all 0.2s ease;
+}
+
+button.tab-btn:hover {
+    color: #EAECEF;
+    opacity: 1; /* Stops the global button fade effect */
+}
+
+button.tab-btn.active {
+    color: #EAECEF;
+    border-bottom: 2px solid #0ECB81; /* Green accent to show it is selected */
+}
+
+/* --- Disabled Input Styling --- */
+.input-field input.disabled-input {
+    color: #848E9C;
+    background-color: #181c27; /* Slightly different background */
+    border-color: #2b2b43;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Ensure gap in the trading panel is balanced */
+#trading-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}

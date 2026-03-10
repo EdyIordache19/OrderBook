@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 
 const TradePanel = ({ accountInfo }) => {
-    const [price, setPrice] = useState('');
+    const [price, setPrice] = useState(0);
     const [quantity, setQuantity] = useState('');
     const [websocket, setWebsocket] = useState('');
+
+    const [orderType, setOrderType] = useState('LIMIT');
 
     const usdBalance = accountInfo?.usd || 0;
     const equityBalance = accountInfo?.equity || 0;
@@ -20,20 +22,25 @@ const TradePanel = ({ accountInfo }) => {
             console.log("Please enter quantity");
             alert("Please enter quantity");
         }
-        if (!price) {
+        if (orderType === "LIMIT" && !price) {
             console.log("Please enter price");
             alert("Please enter price");
         }
 
         console.log(`Executing ${type} order | QTY: ${quantity} | PRICE: ${price}`);
 
+        let orderPrice = parseInt(price);
+        if (orderType === "MARKET") {
+            orderPrice = type === "BUY" ? 9999 : 0;
+        }
+
         const order = {
             action: "PLACE_ORDER",
-            price: parseFloat(price),
+            price: orderPrice,
             quantity: parseInt(quantity),
             side: type == "BUY" ? 0 : 1,
             tif: 0,
-            type: 0
+            type: orderType === "LIMIT" ? 0 : 1
         };
 
         websocket.send(JSON.stringify(order));
@@ -41,10 +48,19 @@ const TradePanel = ({ accountInfo }) => {
 
     return (
         <div id="trading-panel">
-            {/* Top Buttons Row */}
-            <div className="buttons-div">
-                <button id="sell-button" onClick={() => handleTrade('SELL')}>SELL</button>
-                <button id="buy-button" onClick={() => handleTrade('BUY')}>BUY</button>
+            <div className="order-type-tabs">
+                <button
+                    className={`tab-btn ${orderType === 'LIMIT' ? 'active' : ''}`}
+                    onClick={() => setOrderType('LIMIT')}
+                >
+                    Limit
+                </button>
+                <button
+                    className={`tab-btn ${orderType === 'MARKET' ? 'active' : ''}`}
+                    onClick={() => setOrderType('MARKET')}
+                >
+                    Market
+                </button>
             </div>
 
             {/* Input Fields Container */}
@@ -52,10 +68,12 @@ const TradePanel = ({ accountInfo }) => {
                 <div className="input-field">
                     <label>Price</label>
                     <input
-                        type="number"
-                        value={price}
+                        type={orderType === 'MARKET' ? "text" : "number"}
+                        value={orderType === 'MARKET' ? 'Market Price' : price}
                         onChange={(e) => setPrice(e.target.value)}
                         placeholder="0.00"
+                        disabled={orderType === 'MARKET'}
+                        className={orderType === 'MARKET' ? "disabled-input" : ""}
                     />
                 </div>
 
@@ -68,6 +86,12 @@ const TradePanel = ({ accountInfo }) => {
                         placeholder="0"
                     />
                 </div>
+            </div>
+
+            {/* Buttons Row */}
+            <div className="buttons-div">
+                <button id="sell-button" onClick={() => handleTrade('SELL')}>SELL</button>
+                <button id="buy-button" onClick={() => handleTrade('BUY')}>BUY</button>
             </div>
 
             <div className="ledger-section">
@@ -86,13 +110,6 @@ const TradePanel = ({ accountInfo }) => {
                         {equityBalance.toLocaleString()}
                     </span>
                 </div>
-
-                <button
-                    id="close-position-button"
-                    disabled={equityBalance <= 0}
-                >
-                    Close Position
-                </button>
             </div>
         </div>
     );

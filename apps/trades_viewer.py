@@ -145,7 +145,7 @@ async def handle_client(websocket, path=""):
 
             random_id = random.randint(100000, 999999)
             if data.get("action") == "PLACE_ORDER":
-                payload = struct.pack("<QIQIBBB",
+                payload = struct.pack("<QIQIBBI",
                                       random_id,
                                       1,
                                       data['price'],
