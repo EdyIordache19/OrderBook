@@ -43,7 +43,7 @@ function App(props) {
 
                     <div className="side-column">
                         <div className="panel" id='trading-panel'>
-                            <TradePanel accountInfo={accountInfo} />
+                            <TradePanel accountInfo={accountInfo} currentPrice={latestTrade?.data?.close || 0} />
                         </div>
                     </div>
                 </div>

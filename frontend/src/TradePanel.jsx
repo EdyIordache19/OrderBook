@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const TradePanel = ({ accountInfo }) => {
+const TradePanel = ({ accountInfo, currentPrice }) => {
     const [price, setPrice] = useState(0);
     const [quantity, setQuantity] = useState('');
     const [websocket, setWebsocket] = useState('');
@@ -9,6 +9,10 @@ const TradePanel = ({ accountInfo }) => {
 
     const usdBalance = accountInfo?.usd || 0;
     const equityBalance = accountInfo?.equity || 0;
+
+    const safeMarketPrice = currentPrice || 0;
+    const totalAccountValue = usdBalance + (equityBalance * safeMarketPrice);
+    const totalProfit = totalAccountValue - 1000000;
 
     useEffect(() => {
         const websocket = new WebSocket("ws://localhost:8765");
@@ -110,6 +114,30 @@ const TradePanel = ({ accountInfo }) => {
                         {equityBalance.toLocaleString()}
                     </span>
                 </div>
+            </div>
+
+            <div className="ledger-row">
+                <span className="ledger-label" style={{ color: '#d1d4dc', fontWeight: 'bold' }}>Est. Total Value</span>
+
+                {/* Dynamic Color Logic: Green if > $1M, Red if < $1M, White if exactly $1M */}
+                <span className="ledger-value" style={{
+                    fontWeight: 'bold',
+                    color: totalAccountValue > 1000000 ? '#0ECB81' : totalAccountValue < 1000000 ? '#F6465D' : '#EAECEF'
+                }}>
+                    ${totalAccountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+            </div>
+
+            <div className="ledger-row">
+                <span className="ledger-label" style={{ color: '#d1d4dc', fontWeight: 'bold' }}>Est. Total P&L</span>
+
+                {/* Dynamic Color Logic: Green if > $0, Red if < $0, White if exactly $0 */}
+                <span className="ledger-value" style={{
+                    fontWeight: 'bold',
+                    color: totalProfit > 0 ? '#0ECB81' : totalProfit < 0 ? '#F6465D' : '#EAECEF'
+                }}>
+                    ${totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
             </div>
         </div>
     );
