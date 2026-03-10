@@ -4,9 +4,11 @@
 #include <cstdint>
 #include <cstring>
 #include <chrono>
+#include <iostream>
 
 struct __attribute__((packed)) WireMessage {
     uint64_t id;
+    uint32_t user_id;
     uint64_t price;
     uint32_t quantity;
 

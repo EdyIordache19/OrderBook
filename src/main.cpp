@@ -46,10 +46,12 @@ int main(int argc, char* argv[]) {
     OrderBook orderBook(numOrders, matchBuffer);
 
     std::atomic<bool> running = true;
+    std::atomic<int64_t> usd_balance = 1000000;
+    std::atomic<int64_t> equity_balance = 0;
 
-    Engine engine(ordersBuffer, running, orderBook, numOrders);
+    Engine engine(ordersBuffer, running, orderBook, numOrders, usd_balance, equity_balance);
     Gateway gateway(ordersBuffer, running, numOrders);
-    Publisher publisher(orderBook, matchBuffer, running, filename);
+    Publisher publisher(orderBook, matchBuffer, running, filename, usd_balance, equity_balance);
 
     std::thread t_engine(&Engine::run, &engine);
     std::thread t_gateway(&Gateway::run, &gateway);

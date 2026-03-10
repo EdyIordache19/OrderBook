@@ -9,6 +9,7 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
 
     // Copy to order
     order.id = message->id;
+    order.user_id = message->user_id;
     order.price = message->price;
     order.quantity = message->quantity;
 

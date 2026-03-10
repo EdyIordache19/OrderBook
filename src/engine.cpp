@@ -1,10 +1,13 @@
 #include "engine.hpp"
 #include "main.hpp"
 
-Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& _orderBook, uint64_t numOrders)
+Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& _orderBook, uint64_t numOrders,
+    std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance)
     : ordersBuffer(_ordersBuffer),
       running(_running),
-      orderBook(_orderBook)
+      orderBook(_orderBook),
+      usd_balance(_usd_balance),
+      equity_balance(_equity_balance)
 {
     latencies.reserve(numOrders);
 }
@@ -57,7 +60,7 @@ void Engine::run() {
             for (Trade &trade : trades) {
                 uint64_t trade_value = trade.price * trade.quantity;
 
-                if (trade.taker_user_id == 1) {
+                if (trade.maker_user_id == 1) {
                     if (order.side == Side::BUY) {
                         usd_balance -= trade_value;
                         equity_balance += trade.quantity;
@@ -67,7 +70,7 @@ void Engine::run() {
                     }
                 }
 
-                if (trade.maker_user_id == 1) {
+                if (trade.taker_user_id == 1) {
                     if (order.side == Side::BUY) {
                         usd_balance += trade_value;
                         equity_balance -= trade.quantity;
@@ -105,4 +108,7 @@ void Engine::printStats() {
     std::cout << "Median Latency:  " << median << " ns\n";
     std::cout << "99% Latency:     " << p99 << " ns\n";
     std::cout << "99.9% Latency:   " << p99_9 << " ns\n";
+
+    std::cout << "USD BALANCE: " << usd_balance << '\n';
+    std::cout << "EQUITY BALANCE: " << equity_balance << '\n';
 }

@@ -2,11 +2,14 @@
 #include "main.hpp"
 #include "gateway.hpp"
 
-Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename)
+Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename,
+    std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance)
     : book(_book),
       matchBuffer(_matchBuffer),
       running(_running),
-      filename(_filename)
+      filename(_filename),
+      usd_balance(_usd_balance),
+      equity_balance(_equity_balance)
     { }
 
 
@@ -79,6 +82,17 @@ void Publisher::send_trade(int sockfd, sockaddr_in servaddr, Trade current_trade
     sendto(sockfd, &packet, sizeof(TradePacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
 }
 
+void Publisher::send_account_info(int sockfd, sockaddr_in servaddr) {
+    AccountPacket packet;
+    packet.header.type = MsgType::MSG_ACCOUNT_INFO;
+    packet.header.size = sizeof(AccountInfo);
+
+    packet.payload.equity = equity_balance;
+    packet.payload.usd = usd_balance;
+
+    sendto(sockfd, &packet, sizeof(AccountPacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+}
+
 void Publisher::run() {
     pin_thread_to_core(3);
 
@@ -122,6 +136,8 @@ void Publisher::run() {
 
         if (now >= next_send_time) {
             send_snapshot(sockfd, servaddr);
+            send_account_info(sockfd, servaddr);
+
             send_trade(sockfd, servaddr, trade);
 
             if (current_candle.is_active) {

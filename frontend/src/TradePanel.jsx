@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
-const TradePanel = () => {
+const TradePanel = ({ accountInfo }) => {
     const [price, setPrice] = useState('');
     const [quantity, setQuantity] = useState('');
     const [websocket, setWebsocket] = useState('');
+
+    const usdBalance = accountInfo?.usd || 0;
+    const equityBalance = accountInfo?.equity || 0;
 
     useEffect(() => {
         const websocket = new WebSocket("ws://localhost:8765");
@@ -65,6 +68,31 @@ const TradePanel = () => {
                         placeholder="0"
                     />
                 </div>
+            </div>
+
+            <div className="ledger-section">
+                <div className="ledger-header">User Ledger</div>
+
+                <div className="ledger-row">
+                    <span className="ledger-label">USD Balance</span>
+                    <span className="ledger-value usd-value">
+                        ${usdBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                </div>
+
+                <div className="ledger-row">
+                    <span className="ledger-label">Equity (Shares)</span>
+                    <span className="ledger-value equity-value">
+                        {equityBalance.toLocaleString()}
+                    </span>
+                </div>
+
+                <button
+                    id="close-position-button"
+                    disabled={equityBalance <= 0}
+                >
+                    Close Position
+                </button>
             </div>
         </div>
     );

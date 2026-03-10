@@ -16,11 +16,12 @@ private:
     std::thread engineThread;
     std::vector<uint64_t> latencies;
 
-    uint64_t usd_balance = 100000;
-    uint64_t equity_balance = 0;
+    std::atomic<int64_t>& usd_balance;
+    std::atomic<int64_t>& equity_balance;
 
 public:
-    Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& orderBook, uint64_t numOrders);
+    Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& orderBook, uint64_t numOrders,
+        std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance);
     void run();
     void stop();
     void printStats();

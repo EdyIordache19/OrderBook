@@ -9,6 +9,7 @@ import TradePanel from './TradePanel';
 function App(props) {
     const [snapshot, setSnapshot] = useState(null);
     const [latestTrade, setLatestTrade] = useState(null);
+    const [accountInfo, setAccountInfo] = useState(null);
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:8765');
@@ -17,9 +18,11 @@ function App(props) {
             const data = JSON.parse(event.data);
 
             if (data.type == "SNAPSHOT") {
-              setSnapshot(data);
+                setSnapshot(data);
             } else if (data.type == "CANDLE") {
-              setLatestTrade(data)
+                setLatestTrade(data);
+            } else if (data.type == "ACCOUNT_INFO") {
+                setAccountInfo(data);
             }
         };
 
@@ -40,7 +43,7 @@ function App(props) {
 
                     <div className="side-column">
                         <div className="panel" id='trading-panel'>
-                            <TradePanel />
+                            <TradePanel accountInfo={accountInfo} />
                         </div>
                     </div>
                 </div>

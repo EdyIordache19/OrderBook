@@ -191,3 +191,68 @@ button:active {
 .input-field input[type=number] {
     -moz-appearance: textfield; /* Firefox fallback */
 }
+
+/* --- Ledger Panel --- */
+.ledger-section {
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #2b2b43;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ledger-header {
+    color: #848E9C;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.ledger-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ledger-label {
+    color: #848E9C;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.ledger-value {
+    font-family: 'Roboto Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.usd-value {
+    color: #0ECB81;
+}
+
+.equity-value {
+    color: #d1d4dc;
+}
+
+/* Specific styling for the Close Position button so it looks distinct from the normal Sell button */
+#close-position-button {
+    margin-top: 10px;
+    background-color: transparent;
+    border: 1px solid #F6465D;
+    color: #F6465D;
+    transition: all 0.2s ease;
+}
+
+#close-position-button:hover:not(:disabled) {
+    background-color: #F6465D;
+    color: white;
+}
+
+#close-position-button:disabled {
+    border-color: #2b2b43;
+    color: #848E9C;
+    cursor: not-allowed;
+}

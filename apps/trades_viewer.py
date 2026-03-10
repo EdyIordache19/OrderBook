@@ -76,6 +76,7 @@ async def udp_listener():
         "time": 0
     }
     latest_snapshot = None
+    latest_account_info = None
 
     while True:
         try:
@@ -95,6 +96,8 @@ async def udp_listener():
                     current_candle["time"] = time
                 elif msg_type == 2:
                     latest_snapshot = payload
+                elif msg_type == 4:
+                    latest_account_info = payload
 
         except BlockingIOError:
             pass
@@ -119,7 +122,15 @@ async def udp_listener():
 
                 websockets.broadcast(clients, json.dumps(snapshot_packet))
                 latest_snapshot = None
-
+            if latest_account_info is not None:
+                usd, equity = struct.unpack('<qq', latest_account_info)
+                account_info_packet = {
+                    "type": "ACCOUNT_INFO",
+                    "usd": usd,
+                    "equity": equity
+                }
+                latest_account_info = None
+                websockets.broadcast(clients, json.dumps(account_info_packet))
         await asyncio.sleep(0.005)
 
 engine_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -134,8 +145,9 @@ async def handle_client(websocket, path=""):
 
             random_id = random.randint(100000, 999999)
             if data.get("action") == "PLACE_ORDER":
-                payload = struct.pack("<QQIBBB",
+                payload = struct.pack("<QIQIBBB",
                                       random_id,
+                                      1,
                                       data['price'],
                                       data['quantity'],
                                       data['side'],

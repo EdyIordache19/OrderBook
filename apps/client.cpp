@@ -131,6 +131,7 @@ int main(int argc, char *argv[]) {
             msgvec[j].msg_hdr.msg_iovlen = 1;
 
             msgs[j].id = i + j;
+            msgs[j].user_id = 0;
 
             std::uniform_int_distribution<int64_t> price_dist(
                 static_cast<int64_t>(current_mid) - 10,
@@ -166,6 +167,7 @@ int main(int argc, char *argv[]) {
     WireMessage killMessage;
 
     killMessage.id = 0;
+    killMessage.user_id = 0;
     killMessage.price = 100;
     killMessage.quantity = 10;
     killMessage.side = 'S';
