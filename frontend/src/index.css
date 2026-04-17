@@ -302,3 +302,121 @@ button.tab-btn.active {
     flex-direction: column;
     gap: 15px;
 }
+
+/* --- Orders Table Panel --- */
+.orders-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 250px;
+    padding: 0; /* Removing default padding to let the tabs hit the edge */
+    overflow: hidden;
+}
+
+/* --- Orders Tabs --- */
+.orders-tabs {
+    display: flex;
+    border-bottom: 1px solid #2b2b43;
+    padding: 0 20px;
+    background-color: #131722; /* Slightly darker background for the tab bar */
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.order-tab-btn {
+    background: transparent;
+    color: #848E9C;
+    border: none;
+    border-radius: 0;
+    padding: 15px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px; /* Overlap the container border */
+    transition: all 0.2s ease;
+    text-transform: none; /* Override global button uppercase */
+    letter-spacing: normal;
+}
+
+.order-tab-btn:hover {
+    color: #EAECEF;
+}
+
+.order-tab-btn.active {
+    color: #EAECEF;
+    border-bottom: 2px solid #0ECB81;
+}
+
+/* --- Table Styling --- */
+.table-container {
+    padding: 10px 20px 20px 20px;
+    overflow-y: auto;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.orders-table th {
+    color: #848E9C;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 12px 10px;
+    border-bottom: 1px solid #2b2b43;
+}
+
+.orders-table td {
+    padding: 12px 10px;
+    font-size: 13px;
+    color: #EAECEF;
+    border-bottom: 1px solid #1f2430; /* Very subtle row separator */
+}
+
+.orders-table tbody tr:hover td {
+    background-color: #1f2430; /* Highlight row on hover */
+}
+
+/* Column Specifics */
+.orders-table .num-col {
+    font-family: 'Roboto Mono', 'Fira Code', 'Courier New', monospace;
+}
+
+.orders-table .time-col {
+    color: #848E9C;
+}
+
+.orders-table .pair-col {
+    font-weight: 600;
+}
+
+.text-buy { color: #0ECB81 !important; }
+.text-sell { color: #F6465D !important; }
+.text-gray { color: #848E9C !important; }
+
+/* Cancel Button */
+.cancel-btn {
+    background: transparent;
+    color: #848E9C;
+    border: 1px solid #848E9C;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+    background: #F6465D;
+    color: white;
+    border-color: #F6465D;
+}
+
+.empty-state {
+    text-align: center !important;
+    padding: 40px !important;
+    color: #848E9C;
+    font-style: italic;
+}

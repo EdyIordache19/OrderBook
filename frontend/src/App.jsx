@@ -5,6 +5,7 @@ import Header from "./Header";
 import ProgressBar from './ProgressBar';
 import DOM from './DOM';
 import TradePanel from './TradePanel';
+import OrdersTable from './OrdersTable';
 
 function App(props) {
     const [snapshot, setSnapshot] = useState(null);
@@ -45,6 +46,12 @@ function App(props) {
                         <div className="panel" id='trading-panel'>
                             <TradePanel accountInfo={accountInfo} currentPrice={latestTrade?.data?.close || 0} />
                         </div>
+                    </div>
+                </div>
+
+                <div className="layout-row" style={{ paddingTop: '0px' }}>
+                    <div style={{ width: '100%' }}>
+                        <OrdersTable />
                     </div>
                 </div>
 
