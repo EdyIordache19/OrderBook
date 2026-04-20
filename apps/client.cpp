@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <iostream>
 #include <cstring>
 #include <sys/socket.h>
@@ -15,11 +16,14 @@
 
 #include "../include/cxxopts.hpp"
 
+#define MAX_BATCH_SIZE 1000
+
 std::atomic<uint64_t> shared_price{1000};
 std::atomic<bool> running{true};
 
 /**
- * @brief Listens for trade packets so it can calculate the price accordingly
+ * @brief Listens to multicast trades to maintain a moving mid-price for
+ * randomly generated orders without coupling to the engine
  */
 void listen_for_trade() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -54,6 +58,7 @@ void listen_for_trade() {
                 int current_price = shared_price.load(std::memory_order_relaxed);
 
                 // Recalculate price based on traded price
+                // Ignore price if close to MAX_PRICE or 0 to avoid generating prices close to extremes
                 int new_price;
                 if (packet->payload.price >= (MAX_PRICE - 1000) || packet->payload.price == 0) {
                     new_price = current_price;
@@ -61,7 +66,8 @@ void listen_for_trade() {
                     new_price = packet->payload.price;
                 }
 
-                // Store new price in the shared_price variable
+                // Atomic int used to hint price movement, no cross-variable synchronization needed,
+                // so std::memory_order_relaxed is sufficient
                 shared_price.store(new_price, std::memory_order_relaxed);
             }
         }
@@ -75,7 +81,7 @@ int main(int argc, char *argv[]) {
     options.add_options()
         ("h, help", "Print usage")
         ("n, num-orders", "Number of orders to send", cxxopts::value<uint64_t>()->default_value("1000000"))
-        ("b, batch-size", "Size of batches to send orders", cxxopts::value<uint16_t>()->default_value("100"));
+        ("b, batch-size", "Size of batches to send orders (Max 1000)", cxxopts::value<uint16_t>()->default_value("100"));
 
     auto result = options.parse(argc, argv);
 
@@ -87,6 +93,11 @@ int main(int argc, char *argv[]) {
     uint64_t numOrders = result["num-orders"].as<uint64_t>();
     uint16_t batchSize = result["batch-size"].as<uint16_t>();
 
+    if (batchSize > MAX_BATCH_SIZE) {
+        std::cerr << "Batch size should be less than 1000";
+        exit(0);
+    }
+
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
@@ -95,9 +106,9 @@ int main(int argc, char *argv[]) {
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    struct iovec iovecs[batchSize];
-    struct mmsghdr msgvec[batchSize];
-    WireMessage msgs[batchSize];
+    struct iovec iovecs[MAX_BATCH_SIZE];
+    struct mmsghdr msgvec[MAX_BATCH_SIZE];
+    WireMessage msgs[MAX_BATCH_SIZE];
 
     // Random uniform distribution for generating orders
     std::random_device rd;
@@ -161,7 +172,8 @@ int main(int argc, char *argv[]) {
             net_drift += drift;
         }
 
-        // Sendmmsg to send batches of orders. This avoids the system overhead of using a syscall for each order
+        // Sendmmsg to send batches of orders
+        // Avoids the system overhead of using a syscall for each order
         int ret = sendmmsg(sockfd, msgvec, batchSize, 0);
         if (ret == -1) {
             std::cout << "ERROR WITH SENDMMSG\n";
