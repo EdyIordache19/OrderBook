@@ -4,7 +4,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <vector>
 #include <random>
 #include <atomic>
 #include <thread>
@@ -19,6 +18,9 @@
 std::atomic<uint64_t> shared_price{1000};
 std::atomic<bool> running{true};
 
+/**
+ * @brief Listens for trade packets so it can calculate the price accordingly
+ */
 void listen_for_trade() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -51,6 +53,7 @@ void listen_for_trade() {
             if (packet->header.type == MsgType::MSG_TRADE) {
                 int current_price = shared_price.load(std::memory_order_relaxed);
 
+                // Recalculate price based on traded price
                 int new_price;
                 if (packet->payload.price >= (MAX_PRICE - 1000) || packet->payload.price == 0) {
                     new_price = current_price;
@@ -58,6 +61,7 @@ void listen_for_trade() {
                     new_price = packet->payload.price;
                 }
 
+                // Store new price in the shared_price variable
                 shared_price.store(new_price, std::memory_order_relaxed);
             }
         }
@@ -65,13 +69,13 @@ void listen_for_trade() {
 }
 
 int main(int argc, char *argv[]) {
+    // Cxxopts for CLI options
     cxxopts::Options options("UDP-Client", "UDP Server for sending orders");
 
     options.add_options()
         ("h, help", "Print usage")
         ("n, num-orders", "Number of orders to send", cxxopts::value<uint64_t>()->default_value("1000000"))
-        ("b, batch-size", "Size of batches to send orders", cxxopts::value<uint16_t>()->default_value("100"))
-        ("a, alpha", "Alpha that dictates how much last traded price influences market", cxxopts::value<float>()->default_value("0.5"));
+        ("b, batch-size", "Size of batches to send orders", cxxopts::value<uint16_t>()->default_value("100"));
 
     auto result = options.parse(argc, argv);
 
@@ -95,6 +99,7 @@ int main(int argc, char *argv[]) {
     struct mmsghdr msgvec[batchSize];
     WireMessage msgs[batchSize];
 
+    // Random uniform distribution for generating orders
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> mid_price_movement(-1, 1);
@@ -111,11 +116,13 @@ int main(int argc, char *argv[]) {
         price_in >> initial_price;
     }
     price_in.close();
-
     shared_price.store(initial_price, std::memory_order_relaxed);
+
+    // Separate thread for listening for trades
     std::thread listener(listen_for_trade);
 
     for (uint64_t i = 0; i < numOrders; i += batchSize) {
+        // Current mid price and variance of price generated
         uint64_t current_mid = shared_price.load(std::memory_order_relaxed);
         uint64_t net_drift = 0;
 
@@ -130,9 +137,11 @@ int main(int argc, char *argv[]) {
             msgvec[j].msg_hdr.msg_iov = &iovecs[j];
             msgvec[j].msg_hdr.msg_iovlen = 1;
 
+            // Populate random orders
             msgs[j].id = i + j;
             msgs[j].user_id = 0;
 
+            // Price distribution around mid price
             std::uniform_int_distribution<int64_t> price_dist(
                 static_cast<int64_t>(current_mid) - 10,
                 static_cast<int64_t>(current_mid) + 10
@@ -152,18 +161,20 @@ int main(int argc, char *argv[]) {
             net_drift += drift;
         }
 
+        // Sendmmsg to send batches of orders. This avoids the system overhead of using a syscall for each order
         int ret = sendmmsg(sockfd, msgvec, batchSize, 0);
         if (ret == -1) {
             std::cout << "ERROR WITH SENDMMSG\n";
             break;
         }
 
+        // Add total drift after sending a batch
         shared_price.fetch_add(net_drift, std::memory_order_relaxed);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     running.store(false);
 
+    // Custom kill order to make sure the program stops
     WireMessage killMessage;
 
     killMessage.id = 0;
