@@ -43,6 +43,9 @@ tests/unit_tests
 
 # output and input files
 out.txt
+.last_price.txt
+.last_time.txt
 
 # build artifacts
 build/
+CMakeLists.txt
