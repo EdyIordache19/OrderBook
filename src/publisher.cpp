@@ -1,6 +1,9 @@
 #include "publisher.hpp"
 #include "main.hpp"
 
+#include <iostream>
+#include <fstream>
+
 Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename,
     std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance)
     : book(_book),
@@ -12,6 +15,9 @@ Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::ato
     { }
 
 
+/**
+ * @brief Used for debugging, currently legacy
+ */
 void printSnapshot(std::ofstream& outFile, BookSnapshot snapshot) {
     outFile << "BIDS: \n";
     for (int i = 0; i < snapshot.num_bids; i++) {
@@ -37,6 +43,10 @@ void printSnapshot(std::ofstream& outFile, BookSnapshot snapshot) {
     outFile << "\n\n";
 }
 
+/**
+ * @brief Updates OHLCV candle from trades observed since last publish tick
+ *  - candles reset once sent (every 50ms)
+ */
 void update_candle(Trade trade, Candle& current_candle) {
     if (!current_candle.is_active) {
         current_candle.open = trade.price;
@@ -49,6 +59,12 @@ void update_candle(Trade trade, Candle& current_candle) {
 
     current_candle.volume += trade.quantity;
 }
+
+/**
+ * Send_X methods, for sending specific information
+ *  - header size is sizeof(payload), not total packet size
+ *  - do not reorder payloads without updating bridge
+ */
 
 void Publisher::send_snapshot(int sockfd, sockaddr_in servaddr) {
     BookSnapshot snapshot = book.getBookSnapshot();
@@ -95,9 +111,7 @@ void Publisher::send_account_info(int sockfd, sockaddr_in servaddr) {
 void Publisher::run() {
     pin_thread_to_core(3);
 
-    /**
-     * Open the UDP multicast socket
-     */
+    // Open the UDP multicast socket
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(sockaddr_in));
@@ -109,13 +123,18 @@ void Publisher::run() {
     std::ofstream outFile(filename);
 
     Trade trade;
+
+    // Fixed rate publishing for UI; decouples render cadence from engine match throughput
     auto interval = std::chrono::milliseconds(50);
     auto next_send_time = std::chrono::high_resolution_clock::now();
 
+    // Handle timestamps of orders
     time_t timestamp;
     time(&timestamp);
     uint64_t logical_time = (uint64_t)timestamp;
     logical_time += 60*60*2; // From UTC to UTC+2
+
+    // Read last time from file
     std::ifstream time_in(".last_time.txt");
     if (time_in.good()) {
         time_in >> logical_time;
@@ -125,6 +144,7 @@ void Publisher::run() {
     Candle current_candle;
     while (running) {
         auto now = std::chrono::high_resolution_clock::now();
+        // Best effort check, can race
         if (!matchBuffer.is_empty()) {
             matchBuffer.pop(trade);
 
@@ -134,6 +154,8 @@ void Publisher::run() {
         }
 
         if (now >= next_send_time) {
+            // Send to UI once every 50 ms
+            // UI gets latest trade info per tick, not every trade
             send_snapshot(sockfd, servaddr);
             send_account_info(sockfd, servaddr);
 
@@ -144,6 +166,7 @@ void Publisher::run() {
                 logical_time++;
 
                 send_candle(sockfd, servaddr, current_candle);
+                // Reset current candle
                 current_candle = Candle();
             }
 
@@ -151,6 +174,7 @@ void Publisher::run() {
         }
     }
 
+    // Store last time in file
     std::ofstream time_out(".last_time.txt");
     if (time_out.good()) {
         time_out << logical_time;

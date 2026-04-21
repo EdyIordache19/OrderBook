@@ -1,6 +1,3 @@
-#include <iostream>
-#include <fstream>
-
 #include <cstring>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -12,6 +9,13 @@
 #include "ring_buffer.hpp"
 #include "orderbook.hpp"
 
+/**
+ * @brief Network first class that sends different packets via UDP multicast
+ *  - UDP multicast on 239.0.0.1:5000
+ *  - consumer of SPSC ring buffer matchBuffer (engine -> publisher)
+ *  - publishes snapshot / ledger / trade / candle every 50ms
+ *  - does not guarantee to publish every trade
+ */
 class Publisher {
 private:
     OrderBook& book;
