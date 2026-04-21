@@ -146,6 +146,7 @@ struct __attribute__((packed)) AccountPacket {
 /**
  * @brief In memory for engine logic
  */
+
 struct alignas(64) Order {
     uint64_t id;
     uint32_t user_id;

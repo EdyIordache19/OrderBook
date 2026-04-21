@@ -1,6 +1,8 @@
 #include "engine.hpp"
 #include "main.hpp"
+
 #include <atomic>
+#include <algorithm>
 
 Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& _orderBook, uint64_t numOrders,
     std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance)

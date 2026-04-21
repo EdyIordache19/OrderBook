@@ -6,14 +6,18 @@
 
 #include <vector>
 #include <cstdint>
-#include <algorithm>
-#include <fstream>
 #include <iostream>
-#include <map>
-#include <list>
 
 #define MAX_PRICE 10000
 
+/**
+ * @brief Core matching data structure, holds all orders
+ *  - price-time priority: FIFO within a price level via intrusive list
+ *  - bidOrders/askOrders are vectors indexed by integer price level
+ *  - maxBid and minAsk track best bid / ask indices to avoid searching whole book
+ *  - ordersPool for fast access to orders and preallocation; avoids allocation overhead
+ *  - orderLookup vector to have O(1) access to orders (cancel by id), while O(MAX_PRICE) for memory
+ */
 class OrderBook {
 private:
     uint64_t numOrders;

@@ -1,5 +1,7 @@
 #include "orderbook.hpp"
 
+#include <fstream>
+
 OrderBook::OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer)
     : numOrders(numOfOrders),
       matchBuffer(_matchBuffer) {
@@ -10,15 +12,18 @@ OrderBook::OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer)
 }
 
 void OrderBook::addOrder(Order& order) {
+    // Allocate node from pool and copy the incoming order
     Order* orderPtr = ordersPool.allocateOrder();
     *orderPtr = order;
     orderPtr->next = nullptr;
     orderPtr->prev = nullptr;
 
+    // Update orderLookup for O(1) cancel by id
     orderLookup[order.id] = orderPtr;
 
     std::vector<Level>& book = order.side == Side::BUY ? bidOrders : askOrders;
 
+    // Append to price level tail to preserve FIFO
     Level& level = book[order.price];
     if (level.head == nullptr) {
         level.head = orderPtr;
@@ -30,6 +35,7 @@ void OrderBook::addOrder(Order& order) {
         level.tail = orderPtr;
     }
 
+    // Update best prices and counts
     if (order.side == Side::BUY) {
         maxBid = std::max(maxBid, order.price);
         activeBidsCount++;
@@ -40,13 +46,20 @@ void OrderBook::addOrder(Order& order) {
 
 }
 
+/**
+ * @brief Remove order by id
+ * Used by Engine class when cancelling orders based on id
+ */
 void OrderBook::removeOrder(uint64_t orderId) {
     if (orderId >= orderLookup.size() || !orderLookup[orderId]) {
         return;
     }
 
+    // O(1) order retrieval from lookup
     Order* orderToRemove = orderLookup[orderId];
-    Level& level = orderToRemove->side == Side::BUY ? bidOrders[orderToRemove->price] : askOrders[orderToRemove->price];
+    Level& level = orderToRemove->side == Side::BUY ?
+        bidOrders[orderToRemove->price] :
+        askOrders[orderToRemove->price];
 
     if (orderToRemove->prev) {
         orderToRemove->prev->next = orderToRemove->next;
@@ -74,10 +87,15 @@ void OrderBook::removeOrder(uint64_t orderId) {
         }
     }
 
+    // Empty orderLookup and deallocate from ordersPool
     orderLookup[orderId] = nullptr;
     ordersPool.deallocateOrder(orderToRemove);
 }
 
+/**
+ * @brief Remove order based on Order*
+ * Used by processOrder method when having pointer to order
+ */
 void OrderBook::removeOrder(Order *orderToRemove) {
     std::vector<Level>& book = orderToRemove->side == Side::BUY ? bidOrders : askOrders;
 
@@ -95,10 +113,15 @@ void OrderBook::removeOrder(Order *orderToRemove) {
         book[orderToRemove->price].tail = orderToRemove->prev;
     }
 
+    // Empty orderLookup and deallocate from ordersPool
     orderLookup[orderToRemove->id] = nullptr;
     ordersPool.deallocateOrder(orderToRemove);
 }
 
+/**
+ * @brief Legacy method, used to automatically match all remaining orders from book
+ * Not needed anymore, since processOrder handles matching in-place
+ */
 void OrderBook::matchOrders() {
     while (maxBid >= minAsk) {
         Level& bidLevel = bidOrders[maxBid];
@@ -166,29 +189,42 @@ void OrderBook::matchOrders() {
     }
 }
 
+/**
+ * @brief Handles an incoming order, matching it against the book
+ *  - if there remains any quantity of order, Engine decides to rest it or not
+ * @param trades Vector to update when a trade is made, for use in Engine
+ * @return uint32_t Remaining quantity of order that got left on the book
+ */
 uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
+    // For market orders adjust the price into an aggressive limit order
     if (incoming.type == OrderType::MARKET) {
         incoming.price = incoming.side == Side::BUY ? MAX_PRICE - 1 : 0;
     }
 
+    // Guard to keep the price less than MAX_PRICE
     if (incoming.price >= MAX_PRICE) {
         return incoming.quantity;
     }
 
+    // Matching loop that consumes liquidity from the opposite side, starting at best price
     while (incoming.quantity > 0) {
         if (incoming.side == Side::BUY) {
+            // BUY consumes asks from minAsk upward while minAsk <= limit
             if (activeAsksCount == 0) break;
-
             if (minAsk > incoming.price) break;
+
+            // If minAsk price level got depleted, continue with the next price (minAsk++)
             if (askOrders[minAsk].head == nullptr) {
                 minAsk++;
                 if (minAsk >= askOrders.size()) break;
                 continue;
             }
         } else {
+            // SELL consumes bids from maxBid downward while maxBid >= limit
             if (activeBidsCount == 0) break;
-
             if (maxBid < incoming.price) break;
+
+            // If maxBid price level got depleted, continue with next price (maxBid--);
             if (bidOrders[maxBid].head == nullptr) {
                 if (maxBid == 0) break;
                 maxBid--;
@@ -209,10 +245,12 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
         incoming.quantity -= tradeQuantity;
         order->quantity -= tradeQuantity;
 
-        uint64_t tradePrice = incoming.side == Side::BUY ? minAsk : maxBid;
+        // Build trade semantics
+        // TODO: Swap maker with taker: incoming order is taker by convention
         Trade trade(incoming.id, order->id, incoming.user_id, order->user_id, order->price, tradeQuantity, incoming.timestamp);
         trades.push_back(trade);
 
+        // If we matched a whole order sitting on the book, update the price level
         if (order->quantity == 0) {
             level.head = order->next;
             if (level.head) level.head->prev = nullptr;
@@ -228,11 +266,13 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
             ordersPool.deallocateOrder(order);
 
             if (level.head == nullptr) {
-                if (incoming.side == Side::BUY) { // We just depleted an Ask level
+                if (incoming.side == Side::BUY) {
+                    // We just depleted an Ask level
                     while (minAsk < askOrders.size() && askOrders[minAsk].head == nullptr) {
                         minAsk++;
                     }
-                } else { // We just depleted a Bid level
+                } else {
+                    // We just depleted a Bid level
                     while (maxBid > 0 && bidOrders[maxBid].head == nullptr) {
                         maxBid--;
                     }
@@ -244,6 +284,10 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
     return incoming.quantity;
 }
 
+/**
+ * @brief Method to check if order can be filled completely for FOK orders
+ *  - worst case runs through many price levels and order nodes (O(depth))
+ */
 bool OrderBook::canFill(Order& incoming) {
     Order incoming_copy = incoming;
 
@@ -253,10 +297,11 @@ bool OrderBook::canFill(Order& incoming) {
     uint32_t currentQty = 0;
 
     while (incoming_copy.quantity > 0) {
+        // Loop to find order that can match incoming
         while (!currentOrder) {
             if (incoming.side == Side::BUY) {
                 // If price is too big return false (whole BUY order not fulfilled)
-                if (currentPrice > incoming.price || currentPrice > askOrders.size()) return false;
+                if (currentPrice > incoming.price || currentPrice >= askOrders.size()) return false;
                 currentOrder = askOrders[currentPrice].head;
 
                 // If current price level empty, move price up
@@ -364,6 +409,11 @@ uint32_t OrderBook::getLevelQuantity(uint64_t price, Side side) {
     return num_of_orders;
 }
 
+/**
+ * @brief Aggregates quantities per price level
+ *  - O(number of orders in top levels), not O(1)
+ * @return BookSnapshot contains top 10 levels for UI
+ */
 BookSnapshot OrderBook::getBookSnapshot() {
     BookSnapshot newSnapshot;
 
