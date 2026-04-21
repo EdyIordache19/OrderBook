@@ -36,7 +36,7 @@ void Gateway::run() {
         exit(-1);
     }
 
-    // Make receiving buffer size 16MB to avoid packets loss (UDP)
+    // Make receiving buffer size 16MB to avoid packet loss (UDP)
     int rcv_buff_size = 16000000;
     setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &rcv_buff_size, sizeof(rcv_buff_size));
 
@@ -46,7 +46,7 @@ void Gateway::run() {
     serv_addr.sin_port = htons(PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
-    // Spin for 50 us, to not wake up every time
+    // Busy-wait for 50 us, to not wake up every time
     int busy_poll_usec = 50;
     setsockopt(sockfd, SOL_SOCKET, SO_BUSY_POLL, &busy_poll_usec, sizeof(busy_poll_usec));
 
@@ -58,6 +58,8 @@ void Gateway::run() {
 
     std::chrono::high_resolution_clock::time_point start;
 
+    // Best effort UDP
+    // Mitigate loss using big internal buffer (SO_RCVBUF) and busy poll waiting
     uint64_t orders_received = 0;
     while (running) {
         socklen_t len = sizeof(serv_addr);
@@ -67,8 +69,10 @@ void Gateway::run() {
             start = std::chrono::high_resolution_clock::now();
         }
 
+        // Pass received packet to decoder to organize into order structs
         Order order;
         if (Decoder::decode(buffer, n_bytes, order, MAX_PRICE)) {
+            // Spin instead of blocking to avoid orders loss, even though can cost CPU if engine falls behind
             while (ordersBuffer.push(order) != 0);
 
             orders_received++;
@@ -82,6 +86,7 @@ void Gateway::run() {
                 std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
                 std::cout << "Throughput: " << throughput << " orders/second. \n";
 
+                // Release pairs with acquire load in engine, so other thread can observe shutdown promptly
                 running.store(false, std::memory_order_release);
                 break;
             }
