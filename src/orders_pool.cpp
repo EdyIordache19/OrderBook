@@ -11,6 +11,9 @@ OrdersPool::OrdersPool(size_t poolSize) {
     }
 }
 
+/**
+ *  - LIFO free list improves cache warmth (recently freed nodes are likely still hot)
+ */
 Order* OrdersPool::allocateOrder() {
     if (!freeSlots.empty()) {
         Order* orderPtr = freeSlots.back();
@@ -21,6 +24,9 @@ Order* OrdersPool::allocateOrder() {
     }
 }
 
+/**
+ *  - does not reset order; caller should overwrite memory
+ */
 void OrdersPool::deallocateOrder(Order *orderPtr) {
     freeSlots.push_back(orderPtr);
 }
