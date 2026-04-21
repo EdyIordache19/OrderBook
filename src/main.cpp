@@ -5,6 +5,11 @@
 #include "engine.hpp"
 #include "publisher.hpp"
 
+#include <iostream>
+#include <fstream>
+#include <atomic>
+#include <thread>
+
 #include <cxxopts.hpp>
 
 void pin_thread_to_core(int core_id) {

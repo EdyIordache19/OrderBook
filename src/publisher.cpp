@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename,
     std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance)
