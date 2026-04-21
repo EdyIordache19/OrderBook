@@ -48,4 +48,3 @@ out.txt
 
 # build artifacts
 build/
-CMakeLists.txt

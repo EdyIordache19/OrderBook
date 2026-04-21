@@ -3,9 +3,9 @@
 #include "order_types.hpp"
 #include <cstdint>
 #include <cstring>
-#include <chrono>
-#include <iostream>
 
+// Packed struct for network layout stability
+// Fields order/type MUST match sender
 struct __attribute__((packed)) WireMessage {
     uint64_t id;
     uint32_t user_id;
@@ -17,7 +17,7 @@ struct __attribute__((packed)) WireMessage {
     uint8_t tif;
 };
 
-
+// Normalizes wire types into engine semantics
 class Decoder {
 public:
     static bool decode(const char* buffer, size_t len, Order& order, uint64_t maxPrice);
