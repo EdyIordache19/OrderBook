@@ -4,10 +4,16 @@
 #include "ring_buffer.hpp"
 
 #include <thread>
-#include <string.h>
 #include <atomic>
 #include <vector>
 
+/**
+ * @brief Main Engine class that orchestrates orders from SPSC ring buffer (gateway -> engine)
+ *  - applies TIF semantics
+ *  - handles cancel and kill orders
+ *  - updates the user ledger
+ *  - pushes trades to matchBuffer for publisher thread
+ */
 class Engine {
 private:
     OrderBook& orderBook;
@@ -16,6 +22,8 @@ private:
     std::thread engineThread;
     std::vector<uint64_t> latencies;
 
+    // Atomic variables for ledger, to avoid data races (shared with publisher thread)
+    // Used with memory_order_relaxed, since they are independent numeric states
     std::atomic<int64_t>& usd_balance;
     std::atomic<int64_t>& equity_balance;
 

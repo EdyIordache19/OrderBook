@@ -1,11 +1,12 @@
 #include "engine.hpp"
 #include "main.hpp"
+#include <atomic>
 
 Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& _orderBook, uint64_t numOrders,
     std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance)
-    : ordersBuffer(_ordersBuffer),
+    : orderBook(_orderBook),
+      ordersBuffer(_ordersBuffer),
       running(_running),
-      orderBook(_orderBook),
       usd_balance(_usd_balance),
       equity_balance(_equity_balance)
 {
@@ -15,25 +16,30 @@ Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, Or
 void Engine::run() {
     pin_thread_to_core(1);
 
+    // Trades vector for multiple trades happening for the same order
     std::vector<Trade> trades;
     trades.reserve(256);
+    // Best-effort drain of ordersBuffer
     while (running.load(std::memory_order_acquire) || !ordersBuffer.is_empty()) {
+        // Pop orders from SPSC ring buffer, from gateway to engine
         Order order;
         if (!ordersBuffer.pop(order)) {
+            // Treat KILL and CANCEL orders
             if (order.type == OrderType::KILL) {
-                orderBook.addOrder(order);
                 break;
             } else if (order.type == OrderType::CANCEL) {
                 orderBook.removeOrder(order.id);
                 continue;
             }
 
+            // If order was submitted by the user, and can't be processed
+            // (not enough balance / equity balance)
             if (order.user_id == 1) {
                 if (order.side == Side::BUY) {
-                    uint64_t cost = order.price * order.quantity;
-                    if (usd_balance < cost) continue;
+                    int64_t cost = order.price * order.quantity;
+                    if (usd_balance.load(std::memory_order_relaxed) < cost) continue;
                 } else {
-                    if (equity_balance < order.quantity) continue;
+                    if (equity_balance.load(std::memory_order_relaxed) < order.quantity) continue;
                 }
             }
 
@@ -58,28 +64,29 @@ void Engine::run() {
             }
 
             for (Trade &trade : trades) {
+                // Calculate balance for trades done by user
                 uint64_t trade_value = trade.price * trade.quantity;
-
                 if (trade.maker_user_id == 1) {
                     if (order.side == Side::BUY) {
-                        usd_balance -= trade_value;
-                        equity_balance += trade.quantity;
+                        usd_balance.fetch_sub(trade_value, std::memory_order_relaxed);
+                        equity_balance.fetch_add(trade.quantity, std::memory_order_relaxed);
                     } else {
-                        usd_balance += trade_value;
-                        equity_balance -= trade.quantity;
+                        usd_balance.fetch_add(trade_value, std::memory_order_relaxed);
+                        equity_balance.fetch_sub(trade.quantity, std::memory_order_relaxed);
                     }
                 }
 
                 if (trade.taker_user_id == 1) {
                     if (order.side == Side::BUY) {
-                        usd_balance += trade_value;
-                        equity_balance -= trade.quantity;
+                        usd_balance.fetch_add(trade_value, std::memory_order_relaxed);
+                        equity_balance.fetch_sub(trade.quantity, std::memory_order_relaxed);
                     } else {
-                        usd_balance -= trade_value;
-                        equity_balance += trade.quantity;
+                        usd_balance.fetch_sub(trade_value, std::memory_order_relaxed);
+                        equity_balance.fetch_add(trade.quantity, std::memory_order_relaxed);
                     }
                 }
 
+                // Push every trade to matchBuffer of orderBook
                 orderBook.matchBuffer.push(trade);
             }
 
@@ -106,8 +113,8 @@ void Engine::printStats() {
     double p99_9 = latencies[latencies.size() * 0.999];
 
     std::cout << "Median Latency:  " << median << " ns\n";
-    std::cout << "99% Latency:     " << p99 << " ns\n";
-    std::cout << "99.9% Latency:   " << p99_9 << " ns\n";
+    std::cout << "99\% Latency:     " << p99 << " ns\n";
+    std::cout << "99.9\% Latency:   " << p99_9 << " ns\n";
 
     std::cout << "USD BALANCE: " << usd_balance << '\n';
     std::cout << "EQUITY BALANCE: " << equity_balance << '\n';
