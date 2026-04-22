@@ -30,6 +30,7 @@ private:
     void send_candle(int sockfd, sockaddr_in servaddr, Candle current_candle);
     void send_trade(int sockfd, sockaddr_in servaddr, Trade current_trade);
     void send_account_info(int sockfd, sockaddr_in servaddr);
+    void send_open_orders(int sockfd, sockaddr_in servaddr);
 public:
     Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename,
         std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance);

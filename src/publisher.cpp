@@ -1,9 +1,11 @@
 #include "publisher.hpp"
 #include "main.hpp"
+#include "order_types.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <netinet/in.h>
 #include <thread>
 
 Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename,
@@ -110,6 +112,33 @@ void Publisher::send_account_info(int sockfd, sockaddr_in servaddr) {
     sendto(sockfd, &packet, sizeof(AccountPacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
 }
 
+void Publisher::send_open_orders(int sockfd, sockaddr_in servaddr) {
+    OpenOrdersPacket packet;
+    packet.header.type = MsgType::MSG_OPEN_ORDERS;
+    packet.header.size = sizeof(OpenOrders);
+
+    packet.payload.count = 0;
+    for (Order* order : book.getOrderLookup()) {
+        if (packet.payload.count >= 100) break;
+        if (order != nullptr && order->user_id == 1) {
+            // Populate one row in open orders table with order info
+            OpenOrderRow order_row;
+            order_row.id = order->id;
+            order_row.price = order->price;
+            order_row.quantity = order->quantity;
+            order_row.side = order->side;
+            order_row.type = order->type;
+            order_row.timestamp = order->timestamp;
+            order_row.filled_pct = 50;
+
+            // Add this row to the array
+            packet.payload.open_orders[packet.payload.count++] = order_row;
+        }
+    }
+
+    sendto(sockfd, &packet, sizeof(OpenOrdersPacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+}
+
 void Publisher::run() {
     pin_thread_to_core(3);
 
@@ -160,8 +189,8 @@ void Publisher::run() {
             // UI gets latest trade info per tick, not every trade
             send_snapshot(sockfd, servaddr);
             send_account_info(sockfd, servaddr);
-
             send_trade(sockfd, servaddr, trade);
+            send_open_orders(sockfd, servaddr);
 
             if (current_candle.is_active) {
                 current_candle.simulated_time = logical_time;

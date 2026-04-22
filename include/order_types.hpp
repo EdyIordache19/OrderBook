@@ -42,8 +42,50 @@ enum MsgType : uint8_t {
     MSG_CANDLE = 1,
     MSG_BOOK_SNAPSHOT = 2,
     MSG_TRADE = 3,
-    MSG_ACCOUNT_INFO = 4
+    MSG_ACCOUNT_INFO = 4,
+    MSG_OPEN_ORDERS = 5
 };
+
+/**
+ * @brief In memory for engine logic
+ */
+
+struct alignas(64) Order {
+    uint64_t id;
+    uint32_t user_id;
+    uint64_t price;
+    uint32_t quantity;
+    uint64_t timestamp;
+
+    Side side;
+    OrderType type;
+    TimeInForce tif;
+
+    // next/prev only valid when resting on the orderbook
+    Order *next = nullptr;
+    Order *prev = nullptr;
+
+    Order() { }
+
+    Order(uint64_t _id, uint32_t _user_id, uint64_t _price, uint32_t _quantity, Side _side, OrderType _type) :
+        id(_id),
+        user_id(_user_id),
+        price(_price),
+        quantity(_quantity),
+        side(_side),
+        type(_type)
+            { }
+};
+
+struct Level {
+    // First order (highest priority)
+    Order *head = nullptr;
+
+    // Last order (lowest priority)
+    Order *tail = nullptr;
+};
+
+
 
 /**
  * @brief Wire format / Network payload
@@ -115,6 +157,21 @@ struct __attribute__((packed)) AccountInfo {
     int64_t equity;
 };
 
+struct __attribute__((packed)) OpenOrderRow {
+    uint64_t id;
+    uint64_t timestamp;
+    OrderType type;
+    Side side;
+    uint64_t price;
+    uint32_t quantity;
+    uint8_t filled_pct;
+};
+
+struct __attribute__((packed)) OpenOrders {
+    OpenOrderRow open_orders[100];
+    uint8_t count;
+};
+
 struct __attribute__((packed)) MsgHdr {
     MsgType type;
 
@@ -142,43 +199,8 @@ struct __attribute__((packed)) AccountPacket {
     AccountInfo payload;
 };
 
-
-/**
- * @brief In memory for engine logic
- */
-
-struct alignas(64) Order {
-    uint64_t id;
-    uint32_t user_id;
-    uint64_t price;
-    uint32_t quantity;
-    uint64_t timestamp;
-
-    Side side;
-    OrderType type;
-    TimeInForce tif;
-
-    // next/prev only valid when resting on the orderbook
-    Order *next = nullptr;
-    Order *prev = nullptr;
-
-    Order() { }
-
-    Order(uint64_t _id, uint32_t _user_id, uint64_t _price, uint32_t _quantity, Side _side, OrderType _type) :
-        id(_id),
-        user_id(_user_id),
-        price(_price),
-        quantity(_quantity),
-        side(_side),
-        type(_type)
-            { }
-};
-
-struct Level {
-    // First order (highest priority)
-    Order *head = nullptr;
-
-    // Last order (lowest priority)
-    Order *tail = nullptr;
+struct __attribute__((packed)) OpenOrdersPacket {
+    MsgHdr header;
+    OpenOrders payload;
 };
 

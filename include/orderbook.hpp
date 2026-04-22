@@ -62,6 +62,9 @@ public:
     uint32_t getActiveBidsCount() {
         return activeBidsCount;
     }
+    std::vector<Order*> getOrderLookup() {
+        return orderLookup;
+    }
 
     bool isEmpty() {
         return activeAsksCount == 0 && activeBidsCount == 0;
