@@ -188,14 +188,14 @@ async def handle_client(websocket, path=""):
 
             random_id = random.randint(100000, 999999)
             if data.get("action") == "PLACE_ORDER":
-                payload = struct.pack("<QIQIBBI",
+                payload = struct.pack("<QIQIBBB",
                                       random_id,
                                       1,
                                       data['price'],
                                       data['quantity'],
                                       data['side'],
-                                      data['tif'],
-                                      data['type'])
+                                      data['type'],
+                                      data['tif'])
 
                 engine_sock.sendto(payload, ENGINE_ADDRESS)
                 print(f"Sent manual order to engine: {data}")

@@ -11,8 +11,7 @@ struct __attribute__((packed)) WireMessage {
     uint32_t user_id;
     uint64_t price;
     uint32_t quantity;
-
-    char side;
+    uint8_t side;
     uint8_t type;
     uint8_t tif;
 };

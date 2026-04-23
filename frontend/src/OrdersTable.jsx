@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 
 const OrdersTable = ({ activeOrders, orderHistory }) => {
-    if (activeOrders) console.log("Order made!!");
-
     const [activeTab, setActiveTab] = useState('OPEN');
+    const openOrders = Array.isArray(activeOrders) ? activeOrders : [];
 
     // DUMMY DATA (We will replace this with the real props later)
     const dummyOpenOrders = [
@@ -18,7 +17,8 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
     ];
 
     // Toggle which array we render based on the active tab
-    const displayData = activeTab === 'OPEN' ? activeOrders : dummyHistory;
+    const history = Array.isArray(orderHistory) ? orderHistory : dummyHistory;
+    const displayData = activeTab === 'OPEN' ? openOrders : history;
 
     const handleCancel = (orderId) => {
         console.log(`Canceling order ${orderId}...`);
@@ -34,7 +34,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                     className={`order-tab-btn ${activeTab === 'OPEN' ? 'active' : ''}`}
                     onClick={() => setActiveTab('OPEN')}
                 >
-                    Open Orders ({dummyOpenOrders.length})
+                    Open Orders ({openOrders.length})
                 </button>
                 <button
                     className={`order-tab-btn ${activeTab === 'HISTORY' ? 'active' : ''}`}
@@ -59,7 +59,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {displayData === null ? (
+                        {(!Array.isArray(displayData) || displayData.length === 0) ? (
                             <tr>
                                 <td colSpan="8" className="empty-state">No {activeTab.toLowerCase()} orders</td>
                             </tr>
