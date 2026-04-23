@@ -52,6 +52,13 @@ function normalizeOrderType(type) {
   return "UNKNOWN";
 }
 
+function normalizeStatus(status) {
+    if (status === "FILLED" || status === "CANCELED") return status;
+    if (status === 0) return "FILLED"
+    if (status === 1) return "CANCELED"
+    return "UNKNOWN";
+}
+
 function sanitizeSnapshotPacket(msg) {
   if (!isObject(msg) || msg.type !== "SNAPSHOT") return null;
 
@@ -136,6 +143,19 @@ function sanitizeOpenOrdersPacket(msg) {
   return { type: "OPEN_ORDERS", open_orders };
 }
 
+function sanitizeOrdersHistoryPacket(msg) {
+    if (!isObject(msg) || msg.type != "ORDERS_HISTORY") return null;
+
+    return {
+        id: toFiniteNumber(msg.id),
+        user_id: toFiniteNumber(msg.user_id),
+        timestamp: msg.time ?? 0,
+        side: normalizeSide(msg.side),
+        initial_quantity: toFiniteNumber(msg.initial_quantity),
+        status: normalizeStatus(msg.status)
+    };
+}
+
 // inside ws.onmessage use this:
 async function readWsDataAsText(eventData) {
   if (typeof eventData === "string") return eventData;
@@ -150,6 +170,7 @@ function App(props) {
     const [latestTrade, setLatestTrade] = useState(null);
     const [accountInfo, setAccountInfo] = useState(null);
     const [openOrders, setOpenOrders] = useState(null);
+    const [ordersHistory, setOrdersHistory] = useState([]);
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:8765');
@@ -186,6 +207,12 @@ function App(props) {
                     if (clean) setOpenOrders(clean.open_orders);
                     return;
                 }
+                case "ORDERS_HISTORY":
+                    const clean = sanitizeOrdersHistoryPacket(msg);
+                    if (clean) {
+                        setOrdersHistory(prevHistory => [clean, ...prevHistory]);
+                    }
+                    return;
                 default:
                     // Ignore unknown message types safely
                     return;
@@ -216,7 +243,7 @@ function App(props) {
 
                 <div className="layout-row" style={{ paddingTop: '0px' }}>
                     <div style={{ width: '100%' }}>
-                        <OrdersTable activeOrders={openOrders}/>
+                        <OrdersTable activeOrders={openOrders} orderHistory={ordersHistory}/>
                     </div>
                 </div>
 

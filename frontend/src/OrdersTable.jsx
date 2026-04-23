@@ -19,7 +19,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
     ];
 
     // Toggle which array we render based on the active tab
-    const history = Array.isArray(orderHistory) ? orderHistory : dummyHistory;
+    const history = Array.isArray(orderHistory) ? orderHistory : orderHistory;
     const displayData = activeTab === 'OPEN' ? openOrders : history;
 
     useEffect(() => {
@@ -98,7 +98,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                                             {order.filled}%
                                         </td>
                                     ) : (
-                                        <td className={order.status === 'Filled' ? 'text-buy' : 'text-gray'}>
+                                        <td className={order.status === 'FILLED' ? 'text-buy' : 'text-gray'}>
                                             {order.status}
                                         </td>
                                     )}

@@ -100,6 +100,7 @@ async def udp_listener():
     latest_snapshot = None
     latest_account_info = None
     latest_open_orders = None
+    latest_orders_history = None
 
     while True:
         try:
@@ -123,6 +124,9 @@ async def udp_listener():
                     latest_account_info = payload
                 elif msg_type == 5:
                     latest_open_orders = payload
+                elif msg_type == 6:
+                    latest_orders_history = payload
+
         except BlockingIOError:
             pass
 
@@ -174,6 +178,23 @@ async def udp_listener():
 
                 websockets.broadcast(clients, json.dumps(open_orders_packet))
                 latest_open_orders = None
+            if latest_orders_history is not None:
+                id, user_id, time, side, price, init_qty, status = struct.unpack('<QQQBQIB', latest_orders_history)
+                orders_history_packet = {
+                    "type": "ORDERS_HISTORY",
+                    "order_history": {
+                        "id": id,
+                        "user_id": user_id,
+                        "timestamp": time,
+                        "side": side,
+                        "price": price,
+                        "initial_quantity": init_qty,
+                        "status": status
+                    }
+                }
+
+                websockets.broadcast(clients, json.dumps(orders_history_packet))
+                latest_orders_history = None
         await asyncio.sleep(0.005)
 
 engine_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
