@@ -130,9 +130,12 @@ void Publisher::send_open_orders(int sockfd, sockaddr_in servaddr) {
             order_row.side = order->side;
             order_row.type = order->type;
             order_row.timestamp = order->timestamp;
-            uint8_t filled_pct = 100 - (order->quantity * 100 / order->initial_quantity);
-            order_row.filled_pct = filled_pct < 0 ? 0 : filled_pct > 100 ? 100 : filled_pct;
-
+            if (order->initial_quantity == 0) {
+                order_row.filled_pct = 0;
+            } else {
+                uint64_t filled_pct = 100 - (order->quantity * 100 / order->initial_quantity);
+                order_row.filled_pct = filled_pct > 100 ? 100 : filled_pct;
+            }
             // Add this row to the array
             packet.payload.open_orders[packet.payload.count++] = order_row;
         }
