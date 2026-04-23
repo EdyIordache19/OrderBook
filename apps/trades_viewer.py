@@ -22,6 +22,28 @@ sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
 
 clients = set()
 
+def parse_open_orders(payload):
+    if len(payload) < 1:
+        return 0, []
+
+    count = struct.unpack_from('<B', payload)[0]
+    offset = struct.calcsize('<B')
+
+    ROW_FMT = '<QQBBQIB'
+    ROW_SIZE = struct.calcsize(ROW_FMT)
+
+    if len(payload) < 1 + count * ROW_SIZE:
+        return 0, []
+
+    open_orders = []
+    for i in range(count):
+        o_id, o_timestamp, o_type, o_side, o_price, o_qty, o_filled = struct.unpack_from(ROW_FMT, payload, offset)
+        offset += ROW_SIZE
+
+        open_orders.append((o_id, o_timestamp, o_type, o_side, o_price, o_qty, o_filled))
+
+    return count, open_orders
+
 def parse_snapshot(payload):
     num_bids, num_asks = struct.unpack_from('<BB', payload)
 
@@ -77,11 +99,12 @@ async def udp_listener():
     }
     latest_snapshot = None
     latest_account_info = None
+    latest_open_orders = None
 
     while True:
         try:
             while True:
-                data = sock.recv(1024)
+                data = sock.recv(65535)
                 msg_type, msg_size = struct.unpack(HDR_FORMAT, data[:HDR_SIZE])
                 payload = data[HDR_SIZE : HDR_SIZE + msg_size]
 
@@ -98,7 +121,8 @@ async def udp_listener():
                     latest_snapshot = payload
                 elif msg_type == 4:
                     latest_account_info = payload
-
+                elif msg_type == 5:
+                    latest_open_orders = payload
         except BlockingIOError:
             pass
 
@@ -129,8 +153,27 @@ async def udp_listener():
                     "usd": usd,
                     "equity": equity
                 }
-                latest_account_info = None
                 websockets.broadcast(clients, json.dumps(account_info_packet))
+                latest_account_info = None
+            if latest_open_orders is not None:
+                count, open_orders = parse_open_orders(latest_open_orders)
+                open_orders_packet = {
+                    "type": "OPEN_ORDERS",
+                    "count": count,
+                    "open_orders": [{
+                        "id": o_id,
+                        "time": o_timestamp,
+                        "type": o_type,
+                        "side": o_side,
+                        "price": o_price,
+                        "amount": o_qty,
+                        "filled": o_filled,
+                        "status": "filled"
+                    } for o_id, o_timestamp, o_type, o_side, o_price, o_qty, o_filled in open_orders]
+                }
+
+                websockets.broadcast(clients, json.dumps(open_orders_packet))
+                latest_open_orders = None
         await asyncio.sleep(0.005)
 
 engine_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

@@ -119,7 +119,7 @@ void Publisher::send_open_orders(int sockfd, sockaddr_in servaddr) {
 
     packet.payload.count = 0;
     for (Order* order : book.getOrderLookup()) {
-        if (packet.payload.count >= 100) break;
+        if (packet.payload.count >= 10) break;
         if (order != nullptr && order->user_id == 1) {
             // Populate one row in open orders table with order info
             OpenOrderRow order_row;

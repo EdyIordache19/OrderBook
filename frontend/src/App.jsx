@@ -11,6 +11,7 @@ function App(props) {
     const [snapshot, setSnapshot] = useState(null);
     const [latestTrade, setLatestTrade] = useState(null);
     const [accountInfo, setAccountInfo] = useState(null);
+    const [openOrders, setOpenOrders] = useState(null);
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:8765');
@@ -24,6 +25,8 @@ function App(props) {
                 setLatestTrade(data);
             } else if (data.type == "ACCOUNT_INFO") {
                 setAccountInfo(data);
+            } else if (data.type == "OPEN_ORDERS") {
+                setOpenOrders(data.open_orders);
             }
         };
 
@@ -51,7 +54,7 @@ function App(props) {
 
                 <div className="layout-row" style={{ paddingTop: '0px' }}>
                     <div style={{ width: '100%' }}>
-                        <OrdersTable />
+                        <OrdersTable activeOrders={openOrders}/>
                     </div>
                 </div>
 

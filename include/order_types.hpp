@@ -168,8 +168,8 @@ struct __attribute__((packed)) OpenOrderRow {
 };
 
 struct __attribute__((packed)) OpenOrders {
-    OpenOrderRow open_orders[100];
     uint8_t count;
+    OpenOrderRow open_orders[10];
 };
 
 struct __attribute__((packed)) MsgHdr {

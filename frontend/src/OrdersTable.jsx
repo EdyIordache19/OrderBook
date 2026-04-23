@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 
 const OrdersTable = ({ activeOrders, orderHistory }) => {
+    if (activeOrders) console.log("Order made!!");
+
     const [activeTab, setActiveTab] = useState('OPEN');
 
     // DUMMY DATA (We will replace this with the real props later)
@@ -16,7 +18,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
     ];
 
     // Toggle which array we render based on the active tab
-    const displayData = activeTab === 'OPEN' ? dummyOpenOrders : dummyHistory;
+    const displayData = activeTab === 'OPEN' ? activeOrders : dummyHistory;
 
     const handleCancel = (orderId) => {
         console.log(`Canceling order ${orderId}...`);
@@ -48,7 +50,6 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                     <thead>
                         <tr>
                             <th>Time</th>
-                            <th>Pair</th>
                             <th>Type</th>
                             <th>Side</th>
                             <th>Price</th>
@@ -58,7 +59,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {displayData.length === 0 ? (
+                        {displayData === null ? (
                             <tr>
                                 <td colSpan="8" className="empty-state">No {activeTab.toLowerCase()} orders</td>
                             </tr>
@@ -66,18 +67,17 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                             displayData.map((order) => (
                                 <tr key={order.id}>
                                     <td className="time-col">{order.time}</td>
-                                    <td className="pair-col">{order.pair}</td>
                                     <td>{order.type}</td>
                                     <td className={order.side === 'BUY' ? 'text-buy' : 'text-sell'}>
                                         {order.side}
                                     </td>
-                                    <td className="num-col">${order.price.toFixed(2)}</td>
+                                    <td className="num-col">${order.price}</td>
                                     <td className="num-col">{order.amount}</td>
 
                                     {/* Dynamic column based on tab */}
                                     {activeTab === 'OPEN' ? (
                                         <td className="num-col">
-                                            {((order.filled / order.amount) * 100).toFixed(1)}%
+                                            {order.filled}%
                                         </td>
                                     ) : (
                                         <td className={order.status === 'Filled' ? 'text-buy' : 'text-gray'}>
