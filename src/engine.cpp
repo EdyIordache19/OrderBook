@@ -35,7 +35,7 @@ void Engine::run() {
                     Order* order_to_be_removed = orderBook.getOrderLookup()[order.id];
                     OrderHistory orderHistory(order_to_be_removed->id,
                         order_to_be_removed->user_id,
-                        o/rder_to_be_removed->timestamp,
+                        order_to_be_removed->timestamp,
                         order_to_be_removed->type,
                         order_to_be_removed->side,
                         order_to_be_removed->price,

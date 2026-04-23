@@ -6,18 +6,6 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
 
     const openOrders = Array.isArray(activeOrders) ? activeOrders : [];
 
-    // DUMMY DATA (We will replace this with the real props later)
-    const dummyOpenOrders = [
-        { id: 101, time: '17:05:22', pair: 'AAPL/USD', type: 'LIMIT', side: 'BUY', price: 150.50, amount: 100, filled: 0 },
-        { id: 102, time: '17:12:05', pair: 'AAPL/USD', type: 'LIMIT', side: 'SELL', price: 155.00, amount: 50, filled: 25 },
-        { id: 103, time: '17:12:05', pair: 'AAPL/USD', type: 'LIMIT', side: 'SELL', price: 155.00, amount: 50, filled: 25 },
-    ];
-
-    const dummyHistory = [
-        { id: 99, time: '16:45:01', pair: 'AAPL/USD', type: 'MARKET', side: 'BUY', price: 149.20, amount: 200, status: 'Filled' },
-        { id: 98, time: '16:30:12', pair: 'AAPL/USD', type: 'LIMIT', side: 'SELL', price: 151.00, amount: 100, status: 'Canceled' },
-    ];
-
     // Toggle which array we render based on the active tab
     const history = Array.isArray(orderHistory) ? orderHistory : orderHistory;
     const displayData = activeTab === 'OPEN' ? openOrders : history;
@@ -73,13 +61,15 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                             <th>Price</th>
                             <th>Amount</th>
                             {activeTab === 'OPEN' ? <th>Filled %</th> : <th>Status</th>}
-                            <th>Action</th>
+                            {activeTab === 'OPEN' && <th>Action</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {(!Array.isArray(displayData) || displayData.length === 0) ? (
                             <tr>
-                                <td colSpan="8" className="empty-state">No {activeTab.toLowerCase()} orders</td>
+                                <td colSpan={activeTab === 'OPEN' ? 7 : 6} className="empty-state">
+                                    No {activeTab.toLowerCase()} orders
+                                </td>
                             </tr>
                         ) : (
                             displayData.map((order) => (
@@ -90,7 +80,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                                         {order.side}
                                     </td>
                                     <td className="num-col">
-                                        {order.type === "MARKET" ? '-' : '$' + order.price}
+                                        {order.type === "MARKET" ? <span>-</span> : '$' + order.price}
 
                                     </td>
                                     <td className="num-col">{order.amount}</td>
@@ -108,15 +98,13 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
 
                                     {/* Action Column */}
                                     <td className="action-col">
-                                        {activeTab === 'OPEN' ? (
+                                        {activeTab === 'OPEN' && (
                                             <button
                                                 className="cancel-btn"
                                                 onClick={() => handleCancel(order.id, order.price, order.side)}
                                             >
                                                 Cancel
                                             </button>
-                                        ) : (
-                                            <span>-</span>
                                         )}
                                     </td>
                                 </tr>

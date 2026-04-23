@@ -151,7 +151,7 @@ function sanitizeOrdersHistoryPacket(msg) {
     return {
         id: toFiniteNumber(data.id),
         user_id: toFiniteNumber(data.user_id),
-        timestamp: data.timestamp ?? 0,
+        time: data.timestamp ?? 0,
         type: normalizeOrderType(data.type),
         side: normalizeSide(data.side),
         price: toFiniteNumber(data.price),
