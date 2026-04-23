@@ -190,7 +190,7 @@ async def handle_client(websocket, path=""):
             if data.get("action") == "PLACE_ORDER":
                 payload = struct.pack("<QIQIBBB",
                                       random_id,
-                                      1,
+                                      1, # User ID
                                       data['price'],
                                       data['quantity'],
                                       data['side'],
@@ -199,6 +199,21 @@ async def handle_client(websocket, path=""):
 
                 engine_sock.sendto(payload, ENGINE_ADDRESS)
                 print(f"Sent manual order to engine: {data}")
+
+            if data.get("action") == "CANCEL_ORDER":
+                payload = struct.pack("<QIQIBBB",
+                                      data['id'],
+                                      1, # User ID
+                                      data['price'],
+                                      0, # Quantity 0 (doesn't matter)
+                                      data['side'],
+                                      2, # CANCEL Type,
+                                      0, # TIF 0 (doesn't matter)
+                                      )
+
+                engine_sock.sendto(payload, ENGINE_ADDRESS)
+                print(f"Sent CANCEL order to engine: {data}")
+
     finally:
         print("Client disconnected")
         clients.remove(websocket)

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const OrdersTable = ({ activeOrders, orderHistory }) => {
     const [activeTab, setActiveTab] = useState('OPEN');
+        const [websocket, setWebsocket] = useState('');
+
     const openOrders = Array.isArray(activeOrders) ? activeOrders : [];
 
     // DUMMY DATA (We will replace this with the real props later)
@@ -20,9 +22,25 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
     const history = Array.isArray(orderHistory) ? orderHistory : dummyHistory;
     const displayData = activeTab === 'OPEN' ? openOrders : history;
 
-    const handleCancel = (orderId) => {
+    useEffect(() => {
+        const websocket = new WebSocket("ws://localhost:8765");
+
+        setWebsocket(websocket);
+        return () => websocket.close();
+    }, []);
+
+    const handleCancel = (orderId, orderPrice, orderSide) => {
         console.log(`Canceling order ${orderId}...`);
         // We will wire this to your WebSocket later
+        const order = {
+            action: "CANCEL_ORDER",
+            id: orderId,
+            price: orderPrice,
+            side: orderSide === "BUY" ? 0 : 1
+        }
+
+        websocket.send(JSON.stringify(order));
+
     };
 
     return (
@@ -90,7 +108,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                                         {activeTab === 'OPEN' ? (
                                             <button
                                                 className="cancel-btn"
-                                                onClick={() => handleCancel(order.id)}
+                                                onClick={() => handleCancel(order.id, order.price, order.side)}
                                             >
                                                 Cancel
                                             </button>
