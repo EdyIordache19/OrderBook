@@ -15,6 +15,7 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
     order.user_id = message->user_id;
     order.price = message->price;
     order.quantity = message->quantity;
+    order.initial_quantity = message->quantity;
 
     // Side accepts either 'B' or 0 as BUY, else SELL
     if (message->side == 'B' || message->side == 0) order.side = Side::BUY;

@@ -62,7 +62,7 @@ public:
     uint32_t getActiveBidsCount() {
         return activeBidsCount;
     }
-    std::vector<Order*> getOrderLookup() {
+    std::vector<Order*>& getOrderLookup() {
         return orderLookup;
     }
 

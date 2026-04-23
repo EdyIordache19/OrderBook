@@ -55,6 +55,7 @@ struct alignas(64) Order {
     uint32_t user_id;
     uint64_t price;
     uint32_t quantity;
+    uint32_t initial_quantity = 0;
     uint64_t timestamp;
 
     Side side;
@@ -72,6 +73,7 @@ struct alignas(64) Order {
         user_id(_user_id),
         price(_price),
         quantity(_quantity),
+        initial_quantity(_quantity),
         side(_side),
         type(_type)
             { }
