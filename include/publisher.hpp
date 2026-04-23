@@ -32,6 +32,7 @@ private:
     void send_trade(int sockfd, sockaddr_in servaddr, Trade current_trade);
     void send_account_info(int sockfd, sockaddr_in servaddr);
     void send_open_orders(int sockfd, sockaddr_in servaddr);
+    void send_order_history(int sockfd, sockaddr_in servaddr, OrderHistory order_history);
 public:
     Publisher(OrderBook& _book,
         RingBuffer<Trade>& _matchBuffer, RingBuffer<OrderHistory>& _historyBuffer,

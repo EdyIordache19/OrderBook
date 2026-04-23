@@ -148,6 +148,16 @@ void Publisher::send_open_orders(int sockfd, sockaddr_in servaddr) {
     sendto(sockfd, &packet, sizeof(OpenOrdersPacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
 }
 
+void Publisher::send_order_history(int sockfd, sockaddr_in servaddr, OrderHistory order_history) {
+    OrderHistoryPacket packet;
+    packet.header.type = MsgType::MSG_ORDER_HISTORY;
+    packet.header.size = sizeof(OrderHistory);
+
+    packet.payload = order_history;
+
+    sendto(sockfd, &packet, sizeof(OrderHistoryPacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
+}
+
 void Publisher::run() {
     pin_thread_to_core(3);
 
@@ -191,6 +201,13 @@ void Publisher::run() {
             update_candle(trade, current_candle);
         } else {
             std::this_thread::yield();
+        }
+
+        while(!historyBuffer.is_empty()) {
+            OrderHistory order_history;
+            historyBuffer.pop(order_history);
+
+            send_order_history(sockfd, servaddr, order_history);
         }
 
         if (now >= next_send_time) {
