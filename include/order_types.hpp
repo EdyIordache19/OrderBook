@@ -48,8 +48,8 @@ enum MsgType : uint8_t {
 };
 
 enum HistoryStatus : uint8_t {
-    FILLED = 1,
-    CANCELED = 2
+    FILLED = 0,
+    CANCELED = 1
 };
 
 /**
@@ -179,6 +179,7 @@ struct __attribute__((packed)) OrderHistory {
     uint64_t id;
     uint64_t user_id;
     uint64_t timestamp;
+    OrderType type;
     Side side;
     uint64_t price;
     uint32_t initial_quantity;
@@ -186,10 +187,11 @@ struct __attribute__((packed)) OrderHistory {
 
     OrderHistory() { }
 
-    OrderHistory(uint64_t _id, uint64_t _user_id, uint64_t _timestamp, Side _side, uint64_t _price, uint64_t _initial_quantity, HistoryStatus _status) :
+    OrderHistory(uint64_t _id, uint64_t _user_id, uint64_t _timestamp, OrderType _type, Side _side, uint64_t _price, uint64_t _initial_quantity, HistoryStatus _status) :
         id(_id),
         user_id(_user_id),
         timestamp(_timestamp),
+        type(_type),
         side(_side),
         price(_price),
         initial_quantity(_initial_quantity),

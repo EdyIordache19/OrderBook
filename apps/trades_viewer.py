@@ -179,16 +179,17 @@ async def udp_listener():
                 websockets.broadcast(clients, json.dumps(open_orders_packet))
                 latest_open_orders = None
             if latest_orders_history is not None:
-                id, user_id, time, side, price, init_qty, status = struct.unpack('<QQQBQIB', latest_orders_history)
+                id, user_id, time, type, side, price, init_qty, status = struct.unpack('<QQQBBQIB', latest_orders_history)
                 orders_history_packet = {
                     "type": "ORDERS_HISTORY",
                     "order_history": {
                         "id": id,
                         "user_id": user_id,
                         "timestamp": time,
+                        "type": type,
                         "side": side,
                         "price": price,
-                        "initial_quantity": init_qty,
+                        "amount": init_qty,
                         "status": status
                     }
                 }

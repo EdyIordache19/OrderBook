@@ -259,7 +259,7 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
             // If filled order is from user, push to history buffer
             if (order->user_id == 1) {
                 OrderHistory orderHistory(order->id, order->user_id,
-                    order->timestamp, order->side, order->price,
+                    order->timestamp, order->type, order->side, order->price,
                     order->initial_quantity, HistoryStatus::FILLED);
 
                 historyBuffer.push(orderHistory);
@@ -295,9 +295,13 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
 
     if (incoming.quantity == 0) {
         if (incoming.user_id == 1) {
-            OrderHistory orderHistory(incoming.id, incoming.user_id,
-                    incoming.timestamp, incoming.side, incoming.price,
-                    incoming.initial_quantity, HistoryStatus::FILLED);
+            OrderHistory orderHistory(incoming.id,
+                incoming.user_id,
+                incoming.timestamp,
+                incoming.type, incoming.side,
+                incoming.price,
+                incoming.initial_quantity,
+                HistoryStatus::FILLED);
 
             historyBuffer.push(orderHistory);
         }

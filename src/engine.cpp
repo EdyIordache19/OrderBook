@@ -30,17 +30,22 @@ void Engine::run() {
             if (order.type == OrderType::KILL) {
                 break;
             } else if (order.type == OrderType::CANCEL) {
-                orderBook.removeOrder(order.id);
-
                 // Add CANCEL history node to history buffer if from user
                 if (order.user_id == 1) {
-                    OrderHistory orderHistory(order.id, order.user_id,
-                        order.timestamp, order.side, order.price,
-                        order.initial_quantity, HistoryStatus::CANCELED);
+                    Order* order_to_be_removed = orderBook.getOrderLookup()[order.id];
+                    OrderHistory orderHistory(order_to_be_removed->id,
+                        order_to_be_removed->user_id,
+                        o/rder_to_be_removed->timestamp,
+                        order_to_be_removed->type,
+                        order_to_be_removed->side,
+                        order_to_be_removed->price,
+                        order_to_be_removed->initial_quantity,
+                        HistoryStatus::CANCELED);
 
                     orderBook.historyBuffer.push(orderHistory);
                 }
 
+                orderBook.removeOrder(order.id);
                 continue;
             }
 

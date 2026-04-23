@@ -89,7 +89,10 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                                     <td className={order.side === 'BUY' ? 'text-buy' : 'text-sell'}>
                                         {order.side}
                                     </td>
-                                    <td className="num-col">${order.price}</td>
+                                    <td className="num-col">
+                                        {order.type === "MARKET" ? '-' : '$' + order.price}
+
+                                    </td>
                                     <td className="num-col">{order.amount}</td>
 
                                     {/* Dynamic column based on tab */}

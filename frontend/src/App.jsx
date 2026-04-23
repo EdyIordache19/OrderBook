@@ -146,13 +146,17 @@ function sanitizeOpenOrdersPacket(msg) {
 function sanitizeOrdersHistoryPacket(msg) {
     if (!isObject(msg) || msg.type != "ORDERS_HISTORY") return null;
 
+    const data = msg.order_history || {};
+
     return {
-        id: toFiniteNumber(msg.id),
-        user_id: toFiniteNumber(msg.user_id),
-        timestamp: msg.time ?? 0,
-        side: normalizeSide(msg.side),
-        initial_quantity: toFiniteNumber(msg.initial_quantity),
-        status: normalizeStatus(msg.status)
+        id: toFiniteNumber(data.id),
+        user_id: toFiniteNumber(data.user_id),
+        timestamp: data.timestamp ?? 0,
+        type: normalizeOrderType(data.type),
+        side: normalizeSide(data.side),
+        price: toFiniteNumber(data.price),
+        amount: toFiniteNumber(data.amount),
+        status: normalizeStatus(data.status)
     };
 }
 
@@ -208,7 +212,9 @@ function App(props) {
                     return;
                 }
                 case "ORDERS_HISTORY":
+                    console.log(msg)
                     const clean = sanitizeOrdersHistoryPacket(msg);
+                    console.log(clean)
                     if (clean) {
                         setOrdersHistory(prevHistory => [clean, ...prevHistory]);
                     }
