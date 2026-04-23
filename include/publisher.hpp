@@ -20,6 +20,7 @@ class Publisher {
 private:
     OrderBook& book;
     RingBuffer<Trade>& matchBuffer;
+    RingBuffer<OrderHistory>& historyBuffer;
     std::atomic<bool>& running;
     std::string filename;
 
@@ -32,7 +33,9 @@ private:
     void send_account_info(int sockfd, sockaddr_in servaddr);
     void send_open_orders(int sockfd, sockaddr_in servaddr);
 public:
-    Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename,
+    Publisher(OrderBook& _book,
+        RingBuffer<Trade>& _matchBuffer, RingBuffer<OrderHistory>& _historyBuffer,
+        std::atomic<bool>& _running, std::string _filename,
         std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance);
     void run();
 };

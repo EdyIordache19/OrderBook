@@ -1,6 +1,7 @@
 #include "publisher.hpp"
 #include "main.hpp"
 #include "order_types.hpp"
+#include "ring_buffer.hpp"
 
 #include <cstdint>
 #include <iostream>
@@ -9,10 +10,13 @@
 #include <netinet/in.h>
 #include <thread>
 
-Publisher::Publisher(OrderBook& _book, RingBuffer<Trade>& _matchBuffer, std::atomic<bool>& _running, std::string _filename,
+Publisher::Publisher(OrderBook& _book,
+    RingBuffer<Trade>& _matchBuffer, RingBuffer<OrderHistory>& _historyBuffer,
+    std::atomic<bool>& _running, std::string _filename,
     std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance)
     : book(_book),
       matchBuffer(_matchBuffer),
+      historyBuffer(_historyBuffer),
       running(_running),
       filename(_filename),
       usd_balance(_usd_balance),

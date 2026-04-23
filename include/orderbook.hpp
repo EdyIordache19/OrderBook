@@ -35,8 +35,9 @@ private:
     uint64_t minAsk = MAX_PRICE;
 public:
     RingBuffer<Trade>& matchBuffer;
+    RingBuffer<OrderHistory>& historyBuffer;
 
-    OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer);
+    OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer, RingBuffer<OrderHistory>& _historyBuffer);
     void addOrder(Order& order);
     void removeOrder(uint64_t orderId);
     void removeOrder(Order *orderToRemove);

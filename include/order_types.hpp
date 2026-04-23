@@ -43,7 +43,13 @@ enum MsgType : uint8_t {
     MSG_BOOK_SNAPSHOT = 2,
     MSG_TRADE = 3,
     MSG_ACCOUNT_INFO = 4,
-    MSG_OPEN_ORDERS = 5
+    MSG_OPEN_ORDERS = 5,
+    MSG_ORDER_HISTORY = 6
+};
+
+enum HistoryStatus : uint8_t {
+    FILLED = 1,
+    CANCELED = 2
 };
 
 /**
@@ -169,6 +175,16 @@ struct __attribute__((packed)) OpenOrderRow {
     uint8_t filled_pct;
 };
 
+struct __attribute__((packed)) OrderHistory {
+    uint64_t id;
+    uint64_t user_id;
+    uint64_t timestamp;
+    Side side;
+    uint64_t price;
+    uint32_t initial_quantity;
+    HistoryStatus status;
+};
+
 struct __attribute__((packed)) OpenOrders {
     uint8_t count;
     OpenOrderRow open_orders[10];
@@ -206,3 +222,7 @@ struct __attribute__((packed)) OpenOrdersPacket {
     OpenOrders payload;
 };
 
+struct __attribute__((packed)) OrderHistoryPacket {
+    MsgHdr header;
+    OrderHistory payload;
+};

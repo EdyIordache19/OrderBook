@@ -1,4 +1,5 @@
 #include "main.hpp"
+#include "order_types.hpp"
 #include "orderbook.hpp"
 #include "ring_buffer.hpp"
 #include "gateway.hpp"
@@ -47,7 +48,8 @@ int main(int argc, char* argv[]) {
 
     RingBuffer<Order> ordersBuffer(bufferSize);
     RingBuffer<Trade> matchBuffer(bufferSize);
-    OrderBook orderBook(numOrders, matchBuffer);
+    RingBuffer<OrderHistory> historyBuffer(bufferSize);
+    OrderBook orderBook(numOrders, matchBuffer, historyBuffer);
 
     std::atomic<bool> running = true;
     std::atomic<int64_t> usd_balance = 1000000;
@@ -55,7 +57,7 @@ int main(int argc, char* argv[]) {
 
     Engine engine(ordersBuffer, running, orderBook, numOrders, usd_balance, equity_balance);
     Gateway gateway(ordersBuffer, running, numOrders);
-    Publisher publisher(orderBook, matchBuffer, running, filename, usd_balance, equity_balance);
+    Publisher publisher(orderBook, matchBuffer, historyBuffer, running, filename, usd_balance, equity_balance);
 
     std::thread t_engine(&Engine::run, &engine);
     std::thread t_gateway(&Gateway::run, &gateway);

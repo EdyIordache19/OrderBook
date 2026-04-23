@@ -1,10 +1,13 @@
 #include "orderbook.hpp"
+#include "order_types.hpp"
+#include "ring_buffer.hpp"
 
 #include <fstream>
 
-OrderBook::OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer)
+OrderBook::OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer, RingBuffer<OrderHistory>& _historyBuffer)
     : numOrders(numOfOrders),
-      matchBuffer(_matchBuffer) {
+      matchBuffer(_matchBuffer),
+      historyBuffer(_historyBuffer) {
     bidOrders.resize(MAX_PRICE);
     askOrders.resize(MAX_PRICE);
 
@@ -48,7 +51,7 @@ void OrderBook::addOrder(Order& order) {
 
 /**
  * @brief Remove order by id
- * Used by Engine class when cancelling orders based on id
+ *  - used by Engine class when cancelling orders based on id
  */
 void OrderBook::removeOrder(uint64_t orderId) {
     if (orderId >= orderLookup.size() || !orderLookup[orderId]) {
@@ -94,7 +97,7 @@ void OrderBook::removeOrder(uint64_t orderId) {
 
 /**
  * @brief Remove order based on Order*
- * Used by processOrder method when having pointer to order
+ *  - used by processOrder method when having pointer to order
  */
 void OrderBook::removeOrder(Order *orderToRemove) {
     std::vector<Level>& book = orderToRemove->side == Side::BUY ? bidOrders : askOrders;
