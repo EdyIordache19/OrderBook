@@ -238,6 +238,7 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
         Level& level = (incoming.side == Side::BUY) ? askOrders[minAsk] : bidOrders[maxBid];
         Order *order = level.head;
 
+        // Guard if level head happens to have empty order
         if (order->quantity == 0) {
             removeOrder(order);
             continue;
@@ -255,6 +256,14 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
 
         // If we matched a whole order sitting on the book, update the price level
         if (order->quantity == 0) {
+            // If filled order is from user, push to history buffer
+            if (order->user_id == 1) {
+                OrderHistory orderHistory(order->id, order->user_id,
+                    order->timestamp, order->side, order->price,
+                    order->initial_quantity, HistoryStatus::FILLED);
+
+                historyBuffer.push(orderHistory);
+            }
             level.head = order->next;
             if (level.head) level.head->prev = nullptr;
             else level.tail = nullptr;
@@ -284,6 +293,15 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
         }
     }
 
+    if (incoming.quantity == 0) {
+        if (incoming.user_id == 1) {
+            OrderHistory orderHistory(incoming.id, incoming.user_id,
+                    incoming.timestamp, incoming.side, incoming.price,
+                    incoming.initial_quantity, HistoryStatus::FILLED);
+
+            historyBuffer.push(orderHistory);
+        }
+    }
     return incoming.quantity;
 }
 

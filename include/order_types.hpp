@@ -183,6 +183,18 @@ struct __attribute__((packed)) OrderHistory {
     uint64_t price;
     uint32_t initial_quantity;
     HistoryStatus status;
+
+    OrderHistory() { }
+
+    OrderHistory(uint64_t _id, uint64_t _user_id, uint64_t _timestamp, Side _side, uint64_t _price, uint64_t _initial_quantity, HistoryStatus _status) :
+        id(_id),
+        user_id(_user_id),
+        timestamp(_timestamp),
+        side(_side),
+        price(_price),
+        initial_quantity(_initial_quantity),
+        status(_status)
+        { }
 };
 
 struct __attribute__((packed)) OpenOrders {
