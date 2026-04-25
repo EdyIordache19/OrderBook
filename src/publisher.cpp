@@ -182,7 +182,7 @@ void Publisher::run() {
     time_t timestamp;
     time(&timestamp);
     uint64_t logical_time = (uint64_t)timestamp;
-    logical_time += 60*60*2; // From UTC to UTC+2
+    logical_time += 60*60*3; // From UTC to UTC+2 (summer hour)
 
     // Read last time from file
     std::ifstream time_in(".last_time.txt");
@@ -207,6 +207,9 @@ void Publisher::run() {
             OrderHistory order_history;
             historyBuffer.pop(order_history);
 
+            // Sync the manual order's timestamp with the simulated time
+            // UTC+3 offset was subtracted due to react automatically applying changes
+            order_history.timestamp = (logical_time - 3*60*60) * 1000;
             send_order_history(sockfd, servaddr, order_history);
         }
 

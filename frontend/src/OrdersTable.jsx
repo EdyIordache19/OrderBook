@@ -74,7 +74,9 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                         ) : (
                             displayData.map((order) => (
                                 <tr key={order.id}>
-                                    <td className="time-col">{order.time}</td>
+                                    <td className="time-col">
+                                        {new Date(order.time).toLocaleString()}
+                                    </td>
                                     <td>{order.type}</td>
                                     <td className={order.side === 'BUY' ? 'text-buy' : 'text-sell'}>
                                         {order.side}

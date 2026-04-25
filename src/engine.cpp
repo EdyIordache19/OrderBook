@@ -108,7 +108,7 @@ void Engine::run() {
             }
 
             uint64_t now = std::chrono::steady_clock::now().time_since_epoch().count();
-            latencies.push_back(now - order.timestamp);
+            latencies.push_back(now - order.latency_timestamp);
         } else {
             continue;
         }

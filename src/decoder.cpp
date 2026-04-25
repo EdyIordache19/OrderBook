@@ -51,9 +51,12 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
         default:
             return false;
     }
+    order.latency_timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
 
     // Monotonic engine timestamp for metrics
-    order.timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
+    auto now = std::chrono::system_clock::now();
+    auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
+    order.timestamp = ms_since_epoch;
     return true;
 }

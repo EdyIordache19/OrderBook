@@ -63,6 +63,7 @@ struct alignas(64) Order {
     uint32_t quantity;
     uint32_t initial_quantity = 0;
     uint64_t timestamp;
+    uint64_t latency_timestamp;
 
     Side side;
     OrderType type;
