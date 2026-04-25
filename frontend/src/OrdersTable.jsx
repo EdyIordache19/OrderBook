@@ -82,8 +82,7 @@ const OrdersTable = ({ activeOrders, orderHistory }) => {
                                         {order.side}
                                     </td>
                                     <td className="num-col">
-                                        {order.type === "MARKET" ? <span>-</span> : '$' + order.price}
-
+                                        {'$' + order.price}
                                     </td>
                                     <td className="num-col">{order.amount}</td>
 

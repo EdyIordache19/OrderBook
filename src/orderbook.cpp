@@ -2,7 +2,9 @@
 #include "order_types.hpp"
 #include "ring_buffer.hpp"
 
+#include <cstdint>
 #include <fstream>
+#include <sys/types.h>
 
 OrderBook::OrderBook(uint64_t numOfOrders, RingBuffer<Trade>& _matchBuffer, RingBuffer<OrderHistory>& _historyBuffer)
     : numOrders(numOfOrders),
@@ -258,8 +260,25 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
         if (order->quantity == 0) {
             // If filled order is from user, push to history buffer
             if (order->user_id == 1) {
+                uint64_t executed_price = incoming.price;
+                if (incoming.type == OrderType::MARKET && !trades.empty()) {
+                    uint64_t total_value = 0;
+                    uint64_t total_qty = 0;
+
+                    for (auto& trade : trades) {
+                        if (trade.maker_id == incoming.id || trade.taker_id == incoming.id) {
+                            total_value += trade.price * trade.quantity;
+                            total_qty += trade.quantity;
+                        }
+                    }
+
+                    if (total_qty > 0) {
+                        executed_price = total_value / total_qty;
+                    }
+                }
+
                 OrderHistory orderHistory(order->id, order->user_id,
-                    order->timestamp, order->type, order->side, order->price,
+                    order->timestamp, order->type, order->side, executed_price,
                     order->initial_quantity, HistoryStatus::FILLED);
 
                 historyBuffer.push(orderHistory);
@@ -295,11 +314,28 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
 
     if (incoming.quantity == 0) {
         if (incoming.user_id == 1) {
+            uint64_t executed_price = incoming.price;
+            if (incoming.type == OrderType::MARKET && !trades.empty()) {
+                uint64_t total_value = 0;
+                uint64_t total_qty = 0;
+
+                for (auto& trade : trades) {
+                    if (trade.maker_id == incoming.id || trade.taker_id == incoming.id) {
+                        total_value += trade.price * trade.quantity;
+                        total_qty += trade.quantity;
+                    }
+                }
+
+                if (total_qty > 0) {
+                    executed_price = total_value / total_qty;
+                }
+            }
+
             OrderHistory orderHistory(incoming.id,
                 incoming.user_id,
                 incoming.timestamp,
                 incoming.type, incoming.side,
-                incoming.price,
+                executed_price,
                 incoming.initial_quantity,
                 HistoryStatus::FILLED);
 
