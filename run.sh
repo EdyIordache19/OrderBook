@@ -80,7 +80,7 @@ run_simulation() {
     sleep 1
 
     echo "Starting C++ Client to pump $orders orders with..."
-    ./client -n $orders
+    ./client -n $orders -b 1
 
     echo "Client finished dispatching orders."
 

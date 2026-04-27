@@ -58,5 +58,12 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
     auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
     order.timestamp = ms_since_epoch;
+
+    if (order.price >= maxPrice || order.quantity == 0) {
+        // Exception: KILL and CANCEL orders might have dummy prices/quantities, so let them through
+        if (order.type != OrderType::KILL && order.type != OrderType::CANCEL) {
+            return false; // Silently drop the poisoned order
+        }
+    }
     return true;
 }

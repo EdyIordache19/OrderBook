@@ -373,7 +373,13 @@ bool OrderBook::canFill(Order& incoming) {
                 currentOrder = bidOrders[currentPrice].head;
 
                 // If current price level empty, move price down
-                if (!currentOrder) currentPrice--;
+                if (!currentOrder) {
+                    if (currentPrice == 0) {
+                        return false;
+                    }
+
+                    currentPrice--;
+                }
             }
 
             if (currentOrder) {

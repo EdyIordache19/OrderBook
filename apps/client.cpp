@@ -1,14 +1,18 @@
+#include <cstdint>
 #include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <cstring>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
 #include <unistd.h>
 #include <random>
 #include <atomic>
 #include <thread>
+#include <chrono>
 
 #include "../include/orderbook.hpp"
 #include "../include/order_types.hpp"
@@ -99,7 +103,12 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
 
-    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    // Disable Nagle's Algorithm to decrease latency massively
+    int optval = 1;
+    setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+
     sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
 
@@ -107,15 +116,21 @@ int main(int argc, char *argv[]) {
     servaddr.sin_port = htons(PORT);
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-    struct iovec iovecs[MAX_BATCH_SIZE];
-    struct mmsghdr msgvec[MAX_BATCH_SIZE];
-    WireMessage msgs[MAX_BATCH_SIZE];
+    while (connect(sockfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
+        if (errno == ECONNREFUSED) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+        std::cout << "ERROR WITH CONNECT: " << strerror(errno) << "\n";
+        running.store(false, std::memory_order_relaxed);
+        return -1;
+    }
 
     // Random uniform distribution for generating orders
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> mid_price_movement(-1, 1);
-    std::uniform_int_distribution<> qty_dist(1, 500);
+    std::uniform_int_distribution<> qty_dist(1, 10);
     std::uniform_int_distribution<> side_dist(0, 1);
     std::uniform_int_distribution<> tif_dist(0, 2);
     std::uniform_int_distribution<> type_dist(0, 2);
@@ -133,25 +148,16 @@ int main(int argc, char *argv[]) {
     // Separate thread for listening for trades
     std::thread listener(listen_for_trade);
 
-    for (uint64_t i = 0; i < numOrders; i += batchSize) {
+    std::vector<WireMessage> batch(batchSize);
+    for (uint64_t i = 0; i < numOrders && running.load(std::memory_order_relaxed) == true; i += batchSize) {
         // Current mid price and variance of price generated
         uint64_t current_mid = shared_price.load(std::memory_order_relaxed);
         uint64_t net_drift = 0;
 
         for (int j = 0; j < batchSize; j++) {
-            memset(&iovecs[j], 0, sizeof(iovecs[j]));
-            iovecs[j].iov_base = &msgs[j];
-            iovecs[j].iov_len = sizeof(WireMessage);
-
-            memset(&msgvec[j], 0, sizeof(msgvec[j]));
-            msgvec[j].msg_hdr.msg_name = &servaddr;
-            msgvec[j].msg_hdr.msg_namelen = sizeof(servaddr);
-            msgvec[j].msg_hdr.msg_iov = &iovecs[j];
-            msgvec[j].msg_hdr.msg_iovlen = 1;
-
             // Populate random orders
-            msgs[j].id = i + j;
-            msgs[j].user_id = 0;
+            batch[j].id = i + j;
+            batch[j].user_id = 0;
 
             // Price distribution around mid price
             std::uniform_int_distribution<int64_t> price_dist(
@@ -159,33 +165,52 @@ int main(int argc, char *argv[]) {
                 static_cast<int64_t>(current_mid) + 10
             );
 
-            msgs[j].price = static_cast<uint64_t>(
+            batch[j].price = static_cast<uint64_t>(
                 std::min(std::max(price_dist(gen), 0L), static_cast<int64_t>(MAX_PRICE - 1))
             );
 
-            msgs[j].quantity = qty_dist(gen);
-            msgs[j].side = side_dist(gen) == 0 ? 'B' : 'S';
-            msgs[j].tif = tif_dist(gen);
-            msgs[j].type = 0;
+            batch[j].quantity = qty_dist(gen);
+            batch[j].side = side_dist(gen) == 0 ? 'B' : 'S';
+            batch[j].tif = tif_dist(gen);
+            batch[j].type = 0;
 
-            uint64_t drift = mid_price_movement(gen);
+            int64_t drift = mid_price_movement(gen);
+            int64_t next_mid = (int64_t)current_mid + drift;
+
+            if (next_mid <= 100) {
+                current_mid = 100;
+            } else if (next_mid >= 9000) {
+                current_mid = 9000;
+            } else {
+                current_mid = next_mid;
+            }
             current_mid += drift;
             net_drift += drift;
         }
 
-        // Sendmmsg to send batches of orders
-        // Avoids the system overhead of using a syscall for each order
-        int ret = sendmmsg(sockfd, msgvec, batchSize, 0);
-        if (ret == -1) {
-            std::cout << "ERROR WITH SENDMMSG\n";
-            break;
+        // Send all bytes reliably over TCP
+        const char* data_ptr = reinterpret_cast<const char*>(batch.data());
+        size_t bytes_to_send = batch.size() * sizeof(WireMessage);
+        size_t total_sent = 0;
+        int has_error = 0;
+
+        while (total_sent < bytes_to_send) {
+            int ret = send(sockfd, data_ptr + total_sent, bytes_to_send - total_sent, 0);
+            if (ret <= 0) {
+                std::cout << "ERROR WITH SEND: " << strerror(errno) << "\n";
+                has_error = 1;
+                break;
+            }
+            total_sent += ret;
         }
+
+        if (has_error) break;
 
         // Add total drift after sending a batch
         shared_price.fetch_add(net_drift, std::memory_order_relaxed);
     }
 
-    running.store(false);
+    running.store(false, std::memory_order_relaxed);
 
     // Custom kill order to make sure the program stops
     WireMessage killMessage;
@@ -198,16 +223,15 @@ int main(int argc, char *argv[]) {
     killMessage.tif = 0;
     killMessage.type = 99;
 
+    std::cout << "Sending kill message\n";
     for (int i = 0; i < 10; i++) {
-        uint64_t n = sendto(sockfd, &killMessage, sizeof(killMessage), 0,
-            (const struct sockaddr *)&servaddr, sizeof(servaddr));
-        if (n < sizeof(WireMessage)) {
+        if (send(sockfd, &killMessage, sizeof(killMessage), 0) == -1) {
             std::cout << "Error sending kill message";
             return 1;
         }
     }
 
-    std::cout << "Done." << std::endl;
+    std::cout << "Done.\n";
 
     std::ofstream price_out(".last_price.txt");
     if (price_out.good()) {

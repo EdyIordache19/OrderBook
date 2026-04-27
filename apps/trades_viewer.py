@@ -198,8 +198,17 @@ async def udp_listener():
                 latest_orders_history = None
         await asyncio.sleep(0.005)
 
-engine_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-ENGINE_ADDRESS = ('127.0.0.1', 1234)
+engine_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+engine_sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+def ensure_connected():
+    try:
+        engine_sock.getpeername()
+    except socket.error:
+        try:
+            engine_sock.connect(('127.0.0.1', 1234))
+        except socket.error:
+            pass
 
 async def handle_client(websocket, path=""):
     print("New client")
@@ -210,6 +219,7 @@ async def handle_client(websocket, path=""):
 
             random_id = random.randint(100000, 999999)
             if data.get("action") == "PLACE_ORDER":
+                ensure_connected()
                 payload = struct.pack("<QIQIBBB",
                                       random_id,
                                       1, # User ID
@@ -218,11 +228,14 @@ async def handle_client(websocket, path=""):
                                       data['side'],
                                       data['type'],
                                       data['tif'])
-
-                engine_sock.sendto(payload, ENGINE_ADDRESS)
-                print(f"Sent manual order to engine: {data}")
+                try:
+                    engine_sock.sendall(payload)
+                    print(f"Sent manual order to engine: {data}")
+                except Exception as e:
+                    print(f"Error sending order: {e}")
 
             if data.get("action") == "CANCEL_ORDER":
+                ensure_connected()
                 payload = struct.pack("<QIQIBBB",
                                       data['id'],
                                       1, # User ID
@@ -232,9 +245,11 @@ async def handle_client(websocket, path=""):
                                       2, # CANCEL Type,
                                       0, # TIF 0 (doesn't matter)
                                       )
-
-                engine_sock.sendto(payload, ENGINE_ADDRESS)
-                print(f"Sent CANCEL order to engine: {data}")
+                try:
+                    engine_sock.sendall(payload)
+                    print(f"Sent CANCEL order to engine: {data}")
+                except Exception as e:
+                    print(f"Error sending cancel: {e}")
 
     finally:
         print("Client disconnected")
