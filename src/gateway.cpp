@@ -63,21 +63,24 @@ void Gateway::run() {
     fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL, 0) | O_NONBLOCK);
     listen(sockfd, 10);
 
-    char buffer[65536];
-    size_t leftover_bytes = 0;
-
     std::chrono::time_point<std::chrono::high_resolution_clock> start;
     uint64_t orders_received = 0;
+
+    size_t write_cursor = 0, read_cursor = 0;
+    char buffer[65536];
+    int buff_size = 65536;
 
     while (running) {
         // Call accept4 to set the client socket to non-blocking using one atomic step, avoiding multiple syscalls (accept + fcntl)
         int client_sock = accept4(sockfd, nullptr, nullptr, SOCK_NONBLOCK);
 
         while (true) {
-            long int n_bytes = recv(client_sock, buffer + leftover_bytes,
-                                    sizeof(buffer) - leftover_bytes, 0);
+            long int n_bytes = recv(client_sock, buffer + write_cursor,
+                                    buff_size - write_cursor, 0);
 
-            if (n_bytes == 0) {
+            if (n_bytes > 0) {
+                write_cursor += n_bytes;
+            } else if (n_bytes == 0) {
                 // TCP FIN, end
                 close(client_sock);
                 break;
@@ -87,21 +90,19 @@ void Gateway::run() {
                     continue;
                 }
 
-                // Kill everything
+                // Kill everything if any other error message
                 close(client_sock);
                 break;
             }
 
-            size_t total_bytes = leftover_bytes + n_bytes;
-            size_t offset = 0;
-
-            while (total_bytes - offset >= sizeof(WireMessage)) {
+            size_t available_bytes = write_cursor - read_cursor;
+            while (available_bytes >= sizeof(WireMessage)) {
                 if (orders_received == 0) {
                     start = std::chrono::high_resolution_clock::now();
                 }
 
                 Order order;
-                if (Decoder::decode(buffer + offset, sizeof(WireMessage), order, MAX_PRICE)) {
+                if (Decoder::decode(buffer + read_cursor, sizeof(WireMessage), order, MAX_PRICE)) {
                     while (ordersBuffer.push(order) != 0);
 
                     orders_received++;
@@ -120,12 +121,18 @@ void Gateway::run() {
                         return;
                     }
                 }
-                offset += sizeof(WireMessage);
+
+                read_cursor += sizeof(WireMessage);
+                available_bytes = write_cursor - read_cursor;
             }
 
-            leftover_bytes = total_bytes - offset;
-            if (leftover_bytes > 0) {
-                memmove(buffer, buffer + offset, leftover_bytes);
+            // High watermark shift
+            if (write_cursor >= 65000) {
+                size_t leftover = write_cursor - read_cursor;
+                memmove(buffer, buffer + read_cursor, leftover);
+
+                read_cursor = 0;
+                write_cursor = leftover;
             }
         }
 
