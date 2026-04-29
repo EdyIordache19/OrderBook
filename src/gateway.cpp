@@ -3,6 +3,7 @@
 #include "main.hpp"
 #include "decoder.hpp"
 
+#include <asm-generic/socket.h>
 #include <atomic>
 #include <stdlib.h>
 #include <iostream>
@@ -12,8 +13,6 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <netinet/tcp.h>
-#include <unordered_map>
-#include <vector>
 #include <chrono>
 
 #include <sys/types.h>
@@ -42,6 +41,8 @@ void Gateway::run() {
     // Disable Nagle's algorithm for localhost ultra-low latency
     setsockopt(sockfd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
 
+    setsockopt(sockfd, SOL_SOCKET, SO_BUSY_POLL, &optval, sizeof(optval));
+
     int rcv_buff_size = 16000000;
     setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &rcv_buff_size, sizeof(rcv_buff_size));
 
@@ -62,101 +63,74 @@ void Gateway::run() {
     fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFL, 0) | O_NONBLOCK);
     listen(sockfd, 10);
 
-    struct ClientState {
-        char buffer[65536];
-        size_t leftover_bytes = 0;
-    };
-
-    std::vector<struct pollfd> fds;
-    fds.push_back({sockfd, POLLIN, 0});
-    std::unordered_map<int, ClientState> states;
+    char buffer[65536];
+    size_t leftover_bytes = 0;
 
     std::chrono::time_point<std::chrono::high_resolution_clock> start;
     uint64_t orders_received = 0;
 
     while (running) {
-        // Poll for incoming data across all connections with 50ms timeout
-        int ret = poll(fds.data(), fds.size(), 50);
-        if (ret < 0) break;
+        // Call accept4 to set the client socket to non-blocking using one atomic step, avoiding multiple syscalls (accept + fcntl)
+        int client_sock = accept4(sockfd, nullptr, nullptr, SOCK_NONBLOCK);
 
-        for (size_t i = 0; i < fds.size(); ++i) {
-            if (fds[i].revents & (POLLIN | POLLERR | POLLHUP)) {
-                if (fds[i].fd == sockfd) {
-                    // Accept new clients
-                    int client_sock = accept(sockfd, nullptr, nullptr);
-                    if (client_sock >= 0) {
-                        fcntl(client_sock, F_SETFL, fcntl(client_sock, F_GETFL, 0) | O_NONBLOCK);
-                        int optval = 1;
-                        setsockopt(client_sock, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+        while (true) {
+            long int n_bytes = recv(client_sock, buffer + leftover_bytes,
+                                    sizeof(buffer) - leftover_bytes, 0);
 
-                        fds.push_back({client_sock, POLLIN, 0});
-                        states[client_sock] = ClientState();
-                    }
-                } else {
-                    int client_fd = fds[i].fd;
-                    ClientState& state = states[client_fd];
+            if (n_bytes == 0) {
+                // TCP FIN, end
+                close(client_sock);
+                break;
+            } else if (n_bytes < 0) {
+                if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                    // Nothing was received
+                    continue;
+                }
 
-                    long int n_bytes = recv(client_fd, state.buffer + state.leftover_bytes,
-                                            sizeof(state.buffer) - state.leftover_bytes, 0);
+                // Kill everything
+                close(client_sock);
+                break;
+            }
 
-                    if (n_bytes < 0) {
-                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                            continue;
-                        }
-                        close(client_fd);
-                        states.erase(client_fd);
-                        fds.erase(fds.begin() + i);
-                        i--;
-                        continue;
-                    } else if (n_bytes == 0) {
-                        close(client_fd);
-                        states.erase(client_fd);
-                        fds.erase(fds.begin() + i);
-                        i--;
-                        continue;
-                    }
+            size_t total_bytes = leftover_bytes + n_bytes;
+            size_t offset = 0;
 
-                    size_t total_bytes = state.leftover_bytes + n_bytes;
-                    size_t offset = 0;
+            while (total_bytes - offset >= sizeof(WireMessage)) {
+                if (orders_received == 0) {
+                    start = std::chrono::high_resolution_clock::now();
+                }
 
-                    while (total_bytes - offset >= sizeof(WireMessage)) {
-                        if (orders_received == 0) {
-                            start = std::chrono::high_resolution_clock::now();
-                        }
+                Order order;
+                if (Decoder::decode(buffer + offset, sizeof(WireMessage), order, MAX_PRICE)) {
+                    while (ordersBuffer.push(order) != 0);
 
-                        Order order;
-                        if (Decoder::decode(state.buffer + offset, sizeof(WireMessage), order, MAX_PRICE)) {
-                            while (ordersBuffer.push(order) != 0);
+                    orders_received++;
+                    if (orders_received >= numOrders || order.type == OrderType::KILL) {
+                        std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
+                        auto end = std::chrono::high_resolution_clock::now();
 
-                            orders_received++;
-                            if (orders_received >= numOrders || order.type == OrderType::KILL) {
-                                std::cout << "Gateway finished receiving all " << orders_received << " orders\n";
-                                auto end = std::chrono::high_resolution_clock::now();
+                        std::chrono::duration<double> diff = end - start;
+                        double throughput = numOrders / diff.count();
 
-                                std::chrono::duration<double> diff = end - start;
-                                double throughput = numOrders / diff.count();
+                        std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
+                        std::cout << "Throughput: " << throughput << " orders/second. \n";
 
-                                std::cout << "Processed " << numOrders << " orders in " << diff.count() << " seconds.\n";
-                                std::cout << "Throughput: " << throughput << " orders/second. \n";
+                        running.store(false, std::memory_order_release);
 
-                                running.store(false, std::memory_order_release);
-
-                                // Close remaining cleanly
-                                for (auto& pfd : fds) close(pfd.fd);
-                                return;
-                            }
-                        }
-                        offset += sizeof(WireMessage);
-                    }
-
-                    state.leftover_bytes = total_bytes - offset;
-                    if (state.leftover_bytes > 0) {
-                        memmove(state.buffer, state.buffer + offset, state.leftover_bytes);
+                        return;
                     }
                 }
+                offset += sizeof(WireMessage);
+            }
+
+            leftover_bytes = total_bytes - offset;
+            if (leftover_bytes > 0) {
+                memmove(buffer, buffer + offset, leftover_bytes);
             }
         }
+
+        close(client_sock);
     }
 
-    for (auto& pfd : fds) close(pfd.fd);
+    close(sockfd);
 }
