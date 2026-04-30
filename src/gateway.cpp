@@ -19,6 +19,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <vector>
 
 Gateway::Gateway(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, uint64_t _numOrders)
     : ordersBuffer(_ordersBuffer),
@@ -66,43 +67,53 @@ void Gateway::run() {
     std::chrono::time_point<std::chrono::high_resolution_clock> start;
     uint64_t orders_received = 0;
 
-    size_t write_cursor = 0, read_cursor = 0;
-    char buffer[65536];
+    struct ClientState {
+        int fd;
+        size_t write_cursor = 0;
+        size_t read_cursor = 0;
+        char buffer[65536];
+    };
+    std::vector<ClientState> clients;
     int buff_size = 65536;
 
     while (running) {
         // Call accept4 to set the client socket to non-blocking using one atomic step, avoiding multiple syscalls (accept + fcntl)
-        int client_sock = accept4(sockfd, nullptr, nullptr, SOCK_NONBLOCK);
+        int new_client = accept4(sockfd, nullptr, nullptr, SOCK_NONBLOCK);
+        if (new_client >= 0) {
+            int optval = 1;
+            setsockopt(new_client, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+            clients.push_back({new_client, 0, 0, {}});
+        }
 
-        while (true) {
-            long int n_bytes = recv(client_sock, buffer + write_cursor,
-                                    buff_size - write_cursor, 0);
+        for (auto it = clients.begin(); it != clients.end(); ) {
+            ClientState& client = *it;
+            int client_sock = client.fd;
+
+            long int n_bytes = recv(client_sock, client.buffer + client.write_cursor,
+                                    buff_size - client.write_cursor, 0);
 
             if (n_bytes > 0) {
-                write_cursor += n_bytes;
+                client.write_cursor += n_bytes;
             } else if (n_bytes == 0) {
-                // TCP FIN, end
                 close(client_sock);
-                break;
+                it = clients.erase(it);
+                continue;
             } else if (n_bytes < 0) {
-                if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                    // Nothing was received
+                if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                    close(client_sock);
+                    it = clients.erase(it);
                     continue;
                 }
-
-                // Kill everything if any other error message
-                close(client_sock);
-                break;
             }
 
-            size_t available_bytes = write_cursor - read_cursor;
+            size_t available_bytes = client.write_cursor - client.read_cursor;
             while (available_bytes >= sizeof(WireMessage)) {
                 if (orders_received == 0) {
                     start = std::chrono::high_resolution_clock::now();
                 }
 
                 Order order;
-                if (Decoder::decode(buffer + read_cursor, sizeof(WireMessage), order, MAX_PRICE)) {
+                if (Decoder::decode(client.buffer + client.read_cursor, sizeof(WireMessage), order, MAX_PRICE)) {
                     while (ordersBuffer.push(order) != 0);
 
                     orders_received++;
@@ -122,21 +133,21 @@ void Gateway::run() {
                     }
                 }
 
-                read_cursor += sizeof(WireMessage);
-                available_bytes = write_cursor - read_cursor;
+                client.read_cursor += sizeof(WireMessage);
+                available_bytes = client.write_cursor - client.read_cursor;
             }
 
             // High watermark shift
-            if (write_cursor >= 65000) {
-                size_t leftover = write_cursor - read_cursor;
-                memmove(buffer, buffer + read_cursor, leftover);
+            if (client.write_cursor >= 65000) {
+                size_t leftover = client.write_cursor - client.read_cursor;
+                memmove(client.buffer, client.buffer + client.read_cursor, leftover);
 
-                read_cursor = 0;
-                write_cursor = leftover;
+                client.read_cursor = 0;
+                client.write_cursor = leftover;
             }
-        }
 
-        close(client_sock);
+            ++it;
+        }
     }
 
     close(sockfd);
