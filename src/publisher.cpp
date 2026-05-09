@@ -117,7 +117,7 @@ void Publisher::send_account_info(int sockfd, sockaddr_in servaddr) {
     sendto(sockfd, &packet, sizeof(AccountPacket), 0, (const sockaddr *)&servaddr, sizeof(servaddr));
 }
 
-void Publisher::send_open_orders(int sockfd, sockaddr_in servaddr) {
+void Publisher::send_open_orders(int sockfd, sockaddr_in servaddr, uint64_t logical_time) {
     OpenOrdersPacket packet;
     packet.header.type = MsgType::MSG_OPEN_ORDERS;
     packet.header.size = sizeof(OpenOrders);
@@ -219,7 +219,7 @@ void Publisher::run() {
             send_snapshot(sockfd, servaddr);
             send_account_info(sockfd, servaddr);
             send_trade(sockfd, servaddr, trade);
-            send_open_orders(sockfd, servaddr);
+            send_open_orders(sockfd, servaddr, (logical_time - 3*60*60) * 1000);
 
             if (current_candle.is_active) {
                 current_candle.simulated_time = logical_time;

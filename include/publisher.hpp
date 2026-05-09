@@ -31,7 +31,7 @@ private:
     void send_candle(int sockfd, sockaddr_in servaddr, Candle current_candle);
     void send_trade(int sockfd, sockaddr_in servaddr, Trade current_trade);
     void send_account_info(int sockfd, sockaddr_in servaddr);
-    void send_open_orders(int sockfd, sockaddr_in servaddr);
+    void send_open_orders(int sockfd, sockaddr_in servaddr, uint64_t logical_time);
     void send_order_history(int sockfd, sockaddr_in servaddr, OrderHistory order_history);
 public:
     Publisher(OrderBook& _book,

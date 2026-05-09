@@ -253,7 +253,7 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
 
         // Build trade semantics
         // TODO: Swap maker with taker: incoming order is taker by convention
-        Trade trade(incoming.id, order->id, incoming.user_id, order->user_id, order->price, tradeQuantity, incoming.timestamp);
+        Trade trade(incoming.id, order->id, incoming.user_id, order->user_id, order->price, tradeQuantity);
         trades.push_back(trade);
 
         // If we matched a whole order sitting on the book, update the price level
@@ -278,7 +278,7 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
                 }
 
                 OrderHistory orderHistory(order->id, order->user_id,
-                    order->timestamp, order->type, order->side, executed_price,
+                    order->type, order->side, executed_price,
                     order->initial_quantity, HistoryStatus::FILLED);
 
                 historyBuffer.push(orderHistory);
@@ -333,7 +333,6 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
 
             OrderHistory orderHistory(incoming.id,
                 incoming.user_id,
-                incoming.timestamp,
                 incoming.type, incoming.side,
                 executed_price,
                 incoming.initial_quantity,

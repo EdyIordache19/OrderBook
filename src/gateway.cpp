@@ -75,14 +75,18 @@ void Gateway::run() {
     };
     std::vector<ClientState> clients;
     int buff_size = 65536;
+    uint32_t loop_count = 0;
 
     while (running) {
         // Call accept4 to set the client socket to non-blocking using one atomic step, avoiding multiple syscalls (accept + fcntl)
-        int new_client = accept4(sockfd, nullptr, nullptr, SOCK_NONBLOCK);
-        if (new_client >= 0) {
-            int optval = 1;
-            setsockopt(new_client, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
-            clients.push_back({new_client, 0, 0, {}});
+        // Only call occasionally to keep the busy-spin tight
+        if ((loop_count++ & 1023) == 0) {
+            int new_client = accept4(sockfd, nullptr, nullptr, SOCK_NONBLOCK);
+            if (new_client >= 0) {
+                int optval = 1;
+                setsockopt(new_client, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval));
+                clients.push_back({new_client, 0, 0, {}});
+            }
         }
 
         for (auto it = clients.begin(); it != clients.end(); ) {
@@ -107,6 +111,14 @@ void Gateway::run() {
             }
 
             size_t available_bytes = client.write_cursor - client.read_cursor;
+
+            uint64_t batch_timestamp = 0;
+            if (available_bytes >= sizeof(WireMessage)) {
+                // Fetch the epoch time ONCE for the entire batch of packets
+                auto now = std::chrono::system_clock::now();
+                batch_timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+            }
+
             while (available_bytes >= sizeof(WireMessage)) {
                 if (orders_received == 0) {
                     start = std::chrono::high_resolution_clock::now();
@@ -114,6 +126,9 @@ void Gateway::run() {
 
                 Order order;
                 if (Decoder::decode(client.buffer + client.read_cursor, sizeof(WireMessage), order, MAX_PRICE)) {
+                    // Assign the batch timestamp without doing an expensive syscall inside Decoder
+                    order.timestamp = batch_timestamp;
+
                     while (ordersBuffer.push(order) != 0);
 
                     orders_received++;

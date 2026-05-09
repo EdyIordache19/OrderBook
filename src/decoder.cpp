@@ -1,6 +1,7 @@
 #include "decoder.hpp"
 
-#include <chrono>
+#include <x86intrin.h>
+#include <emmintrin.h>
 
 bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxPrice) {
     // Buffer should contain at least sizeof(WireMessage) bytes
@@ -51,13 +52,9 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
         default:
             return false;
     }
-    order.latency_timestamp = std::chrono::steady_clock::now().time_since_epoch().count();
-
-    // Monotonic engine timestamp for metrics
-    auto now = std::chrono::system_clock::now();
-    auto ms_since_epoch = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
-
-    order.timestamp = ms_since_epoch;
+    _mm_lfence();
+    order.core_to_core_ts = __rdtsc();
+    _mm_lfence();
 
     if (order.price >= maxPrice || order.quantity == 0) {
         // Exception: KILL and CANCEL orders might have dummy prices/quantities, so let them through

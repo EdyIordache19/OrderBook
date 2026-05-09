@@ -58,27 +58,28 @@ enum HistoryStatus : uint8_t {
 
 struct alignas(64) Order {
     uint64_t id;
-    uint32_t user_id;
     uint64_t price;
-    uint32_t quantity;
-    uint32_t initial_quantity = 0;
+    uint64_t core_to_core_ts;
     uint64_t timestamp;
-    uint64_t latency_timestamp;
-
-    Side side;
-    OrderType type;
-    TimeInForce tif;
 
     // next/prev only valid when resting on the orderbook
     Order *next = nullptr;
     Order *prev = nullptr;
 
+    uint32_t user_id;
+    uint32_t quantity;
+    uint32_t initial_quantity = 0;
+
+    Side side;
+    OrderType type;
+    TimeInForce tif;
+
     Order() { }
 
     Order(uint64_t _id, uint32_t _user_id, uint64_t _price, uint32_t _quantity, Side _side, OrderType _type) :
         id(_id),
-        user_id(_user_id),
         price(_price),
+        user_id(_user_id),
         quantity(_quantity),
         initial_quantity(_quantity),
         side(_side),
@@ -146,18 +147,16 @@ struct __attribute__((packed)) Trade {
 
     uint64_t price;
     uint32_t quantity;
-    uint64_t timestamp;
 
     Trade() { }
 
-    Trade(uint64_t _maker_id, uint64_t _taker_id, uint64_t _maker_user_id, uint64_t _taker_user_id, uint64_t _price, uint32_t _quantity, uint64_t _timestamp) :
+    Trade(uint64_t _maker_id, uint64_t _taker_id, uint64_t _maker_user_id, uint64_t _taker_user_id, uint64_t _price, uint32_t _quantity) :
         maker_id(_maker_id),
         taker_id(_taker_id),
         maker_user_id(_maker_user_id),
         taker_user_id(_taker_user_id),
         price(_price),
-        quantity(_quantity),
-        timestamp(_timestamp)
+        quantity(_quantity)
         { }
 };
 
@@ -188,10 +187,9 @@ struct __attribute__((packed)) OrderHistory {
 
     OrderHistory() { }
 
-    OrderHistory(uint64_t _id, uint64_t _user_id, uint64_t _timestamp, OrderType _type, Side _side, uint64_t _price, uint64_t _initial_quantity, HistoryStatus _status) :
+    OrderHistory(uint64_t _id, uint64_t _user_id, OrderType _type, Side _side, uint64_t _price, uint64_t _initial_quantity, HistoryStatus _status) :
         id(_id),
         user_id(_user_id),
-        timestamp(_timestamp),
         type(_type),
         side(_side),
         price(_price),
