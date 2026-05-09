@@ -1,4 +1,4 @@
-# ⚡ Ultra-Low Latency Spot Market Matching Engine & Trading Terminal
+# Ultra-Low Latency Spot Market Matching Engine & Trading Terminal
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 ![C++](https://img.shields.io/badge/c++-17%2F20-blue)
@@ -41,10 +41,10 @@ The engine has been aggressively profiled and micro-optimized. Currently, core m
 ### Benchmark Results (1,000,000 Orders)
 | Metric | No Batching (Single Order Dispatches) | High-Throughput Batching (Batches of 100) |
 | :--- | :--- | :--- |
-| **Throughput** | ~213,726 ops/sec | **~10,000,000 ops/sec** |
-| **Median Latency**| **230 ns** | 5,000 ns |
-| **99% Latency** | 2,725 ns | - |
-| **99.9% Latency** | 8,376 ns | - |
+| **Throughput** | ~200,000 ops/sec | **~10,000,000 ops/sec** |
+| **Median Latency**| **230 ns** | ~600 ns |
+| **99% Latency** | 400 ns | ~55us |
+| **99.9% Latency** | 5,000 ns | ~350us |
 
 > *Note: By batching incoming packets, the engine hits max theoretical bandwidth. Without batching, median latency stays strictly around 200–230ns.*
 
