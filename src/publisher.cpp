@@ -210,6 +210,8 @@ void Publisher::run() {
             // Sync the manual order's timestamp with the simulated time
             // UTC+3 offset was subtracted due to react automatically applying changes
             order_history.timestamp = (logical_time - 3*60*60) * 1000;
+            if (order_history.total_qty > 0)
+                order_history.price = order_history.total_value / order_history.total_qty;
             send_order_history(sockfd, servaddr, order_history);
         }
 

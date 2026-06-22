@@ -182,20 +182,25 @@ struct __attribute__((packed)) OrderHistory {
     OrderType type;
     Side side;
     uint64_t price;
+    uint64_t total_value;
+    uint64_t total_qty;
     uint32_t initial_quantity;
     HistoryStatus status;
 
     OrderHistory() { }
 
-    OrderHistory(uint64_t _id, uint64_t _user_id, OrderType _type, Side _side, uint64_t _price, uint64_t _initial_quantity, HistoryStatus _status) :
+    OrderHistory(uint64_t _id, uint64_t _user_id, OrderType _type, Side _side, uint64_t _price, uint64_t _total_value, uint64_t _total_qty, uint64_t _initial_quantity, HistoryStatus _status) :
         id(_id),
         user_id(_user_id),
         type(_type),
         side(_side),
         price(_price),
+        total_value(_total_value),
+        total_qty(_total_qty),
         initial_quantity(_initial_quantity),
         status(_status)
         { }
+
 };
 
 struct __attribute__((packed)) OpenOrders {

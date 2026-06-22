@@ -267,11 +267,9 @@ uint32_t OrderBook::processOrder(Order& incoming, Trade trades[], uint8_t& trade
         if (order->quantity == 0) {
             // If filled order is from user, push to history buffer
             if (order->user_id == 1) {
-                uint64_t executed_price = incoming.price;
+                uint64_t total_value = 0;
+                uint64_t total_qty = 0;
                 if (incoming.type == OrderType::MARKET && trades_count > 0) {
-                    uint64_t total_value = 0;
-                    uint64_t total_qty = 0;
-
                     for (int i = 0; i < trades_count; i++) {
                         Trade trade = trades[i];
                         if (trade.maker_id == incoming.id || trade.taker_id == incoming.id) {
@@ -279,14 +277,11 @@ uint32_t OrderBook::processOrder(Order& incoming, Trade trades[], uint8_t& trade
                             total_qty += trade.quantity;
                         }
                     }
-
-                    if (total_qty > 0) {
-                        executed_price = total_value / total_qty;
-                    }
                 }
 
                 OrderHistory orderHistory(order->id, order->user_id,
-                    order->type, order->side, executed_price,
+                    order->type, order->side, incoming.price,
+                    total_value, total_qty,
                     order->initial_quantity, HistoryStatus::FILLED);
 
                 historyBuffer.push(orderHistory);
@@ -322,11 +317,9 @@ uint32_t OrderBook::processOrder(Order& incoming, Trade trades[], uint8_t& trade
 
     if (incoming.quantity == 0) {
         if (incoming.user_id == 1) {
-            uint64_t executed_price = incoming.price;
+            uint64_t total_value = 0;
+            uint64_t total_qty = 0;
             if (incoming.type == OrderType::MARKET && trades_count > 0) {
-                uint64_t total_value = 0;
-                uint64_t total_qty = 0;
-
                  for (int i = 0; i < trades_count; i++) {
                     Trade trade = trades[i];
                     if (trade.maker_id == incoming.id || trade.taker_id == incoming.id) {
@@ -334,16 +327,13 @@ uint32_t OrderBook::processOrder(Order& incoming, Trade trades[], uint8_t& trade
                         total_qty += trade.quantity;
                     }
                 }
-
-                if (total_qty > 0) {
-                    executed_price = total_value / total_qty;
-                }
             }
 
             OrderHistory orderHistory(incoming.id,
                 incoming.user_id,
                 incoming.type, incoming.side,
-                executed_price,
+                incoming.price,
+                total_value, total_qty,
                 incoming.initial_quantity,
                 HistoryStatus::FILLED);
 

@@ -48,6 +48,7 @@ void Engine::run() {
                         order_to_be_removed->type,
                         order_to_be_removed->side,
                         order_to_be_removed->price,
+                        0, 0,
                         order_to_be_removed->initial_quantity,
                         HistoryStatus::CANCELED);
 
