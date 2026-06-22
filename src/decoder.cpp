@@ -52,9 +52,7 @@ bool Decoder::decode(const char* buffer, size_t len, Order& order, uint64_t maxP
         default:
             return false;
     }
-    _mm_lfence();
     order.core_to_core_ts = __rdtsc();
-    _mm_lfence();
 
     if (order.price >= maxPrice || order.quantity == 0) {
         // Exception: KILL and CANCEL orders might have dummy prices/quantities, so let them through

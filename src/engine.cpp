@@ -30,9 +30,7 @@ void Engine::run() {
         // Pop orders from SPSC ring buffer, from gateway to engine
         Order order;
         if (!ordersBuffer.pop(order)) {
-            _mm_lfence();
             uint64_t engine_start_ts = __rdtsc();
-            _mm_lfence();
 
             // Treat KILL and CANCEL orders
             if (order.type == OrderType::KILL) {
@@ -114,14 +112,10 @@ void Engine::run() {
                 orderBook.matchBuffer.push(trade);
             }
 
-            _mm_lfence();
             unsigned int ui;
             uint64_t engine_end_ts = __rdtscp(&ui);
-            _mm_lfence();
 
-            _mm_lfence();
             uint64_t core_to_core_end = __rdtscp(&ui);
-            _mm_lfence();
 
             uint64_t cycles_num = core_to_core_end - order.core_to_core_ts;
             core_to_core_latencies.push_back(cycles_num / tsc_ticks_per_ns);
