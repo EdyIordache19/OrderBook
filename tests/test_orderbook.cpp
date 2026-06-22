@@ -10,7 +10,8 @@ protected:
     OrderBook book;
     RingBuffer<Trade> matchBuffer;
     RingBuffer<OrderHistory> historyBuffer;
-    std::vector<Trade> trades;
+    Trade *trades = (Trade *)malloc(sizeof(Trade) * 256);
+    uint8_t trades_count = 0;
     OrderBookTest()
         : matchBuffer(1 << 16),
           historyBuffer(1 << 16),
@@ -35,7 +36,7 @@ TEST_F(OrderBookTest, FullMatch) {
 
     // Buy 10 @ 100
     Order buy(2, 1, 100, 10, Side::BUY, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(buy, trades);
+    uint32_t remaining = book.processOrder(buy, trades, trades_count);
 
     ASSERT_EQ(remaining, 0); // Buy fully filled
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0); // Sell fully eaten
@@ -50,7 +51,7 @@ TEST_F(OrderBookTest, PartialMatch_RestingRemains) {
 
     // Buy 10 @ 100
     Order buy(2, 1, 100, 10, Side::BUY, OrderType::LIMIT);
-    book.processOrder(buy, trades);
+    book.processOrder(buy, trades, trades_count);
 
     // Sell should have 10 left
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 10);
@@ -64,7 +65,7 @@ TEST_F(OrderBookTest, PartialMatch_IncomingRemains) {
 
     // Buy 20 @ 100
     Order buy(2, 1, 100, 20, Side::BUY, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(buy, trades);
+    uint32_t remaining = book.processOrder(buy, trades, trades_count);
 
     ASSERT_EQ(remaining, 10); // 10 Left over
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0); // Sell side empty
@@ -89,7 +90,7 @@ TEST_F(OrderBookTest, SweepMultipleLevels) {
 
     // Buy 25 @ 102 (Should eat 10@100, 10@101, and 5@102)
     Order buy(4, 1, 102, 25, Side::BUY, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(buy, trades);
+    uint32_t remaining = book.processOrder(buy, trades, trades_count);
 
     ASSERT_EQ(remaining, 0);
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0);
@@ -103,7 +104,7 @@ TEST_F(OrderBookTest, Spread_NoMatch) {
     book.addOrder(sell);
 
     Order buy(2, 1, 100, 10, Side::BUY, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(buy, trades);
+    uint32_t remaining = book.processOrder(buy, trades, trades_count);
 
     ASSERT_EQ(remaining, 10); // Nothing happened
 
@@ -122,7 +123,7 @@ TEST_F(OrderBookTest, MarketOrder_Execution) {
     book.addOrder(s2);
 
     Order mkt(3, 1, 0, 15, Side::BUY, OrderType::MARKET);
-    uint32_t remaining = book.processOrder(mkt, trades);
+    uint32_t remaining = book.processOrder(mkt, trades, trades_count);
 
     ASSERT_EQ(remaining, 0);
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0); // Eaten
@@ -138,7 +139,7 @@ TEST_F(OrderBookTest, FOK_Success) {
     fok.tif = TimeInForce::FOK;
 
     ASSERT_TRUE(book.canFill(fok)); // Check predicate
-    book.processOrder(fok, trades);
+    book.processOrder(fok, trades, trades_count);
 
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0);
 }
@@ -165,7 +166,7 @@ TEST_F(OrderBookTest, IOC_PartialFill) {
     Order ioc(2, 1, 100, 50, Side::BUY, OrderType::LIMIT);
     ioc.tif = TimeInForce::IOC;
 
-    uint32_t remaining = book.processOrder(ioc, trades);
+    uint32_t remaining = book.processOrder(ioc, trades, trades_count);
 
     ASSERT_EQ(remaining, 40);
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 0);
@@ -184,7 +185,7 @@ TEST_F(OrderBookTest, TimePriority) {
 
     // Buy 10 - Should execute against s1 (First In)
     Order buy(3, 1, 100, 10, Side::BUY, OrderType::LIMIT);
-    book.processOrder(buy, trades);
+    book.processOrder(buy, trades, trades_count);
 
     ASSERT_EQ(book.getLevelQuantity(100, Side::SELL), 10);
 }
@@ -192,7 +193,7 @@ TEST_F(OrderBookTest, TimePriority) {
 // 12. Empty Book Handling
 TEST_F(OrderBookTest, EmptyBook_NoCrash) {
     Order buy(1, 1, 100, 10, Side::BUY, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(buy, trades);
+    uint32_t remaining = book.processOrder(buy, trades, trades_count);
     ASSERT_EQ(remaining, 10);
 
     book.addOrder(buy);
@@ -203,7 +204,7 @@ TEST_F(OrderBookTest, EmptyBook_NoCrash) {
 // Verify engine rejects orders with 0 quantity
 TEST_F(OrderBookTest, ZeroQuantityReject) {
     Order buy(1, 1, 100, 0, Side::BUY, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(buy, trades);
+    uint32_t remaining = book.processOrder(buy, trades, trades_count);
 
     // Should return 0 (nothing processed) and NOT add to book
     ASSERT_EQ(remaining, 0);
@@ -217,7 +218,7 @@ TEST_F(OrderBookTest, OutOfBoundsPrice) {
     Order buy(1, 1, badPrice, 10, Side::BUY, OrderType::LIMIT);
 
     // Verifies bounds check
-    book.processOrder(buy, trades);
+    book.processOrder(buy, trades, trades_count);
 
     // Should not add to book or crash
     ASSERT_EQ(book.getLevelQuantity(badPrice, Side::BUY), 0);
@@ -238,7 +239,7 @@ TEST_F(OrderBookTest, MarketOrderGap) {
 
     // Market Buy 50
     Order mkt(2, 1, 0, 50, Side::BUY, OrderType::MARKET);
-    uint32_t remaining = book.processOrder(mkt, trades);
+    uint32_t remaining = book.processOrder(mkt, trades, trades_count);
 
     // Should fill 10, return 40.
     ASSERT_EQ(remaining, 40);
@@ -281,7 +282,7 @@ TEST_F(OrderBookTest, Cancel_HeadOfList) {
 
     // Verify matching still works against the remaining order (ID 2)
     Order sell(3, 1, 100, 20, Side::SELL, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(sell, trades);
+    uint32_t remaining = book.processOrder(sell, trades, trades_count);
 
     ASSERT_EQ(remaining, 0);
     ASSERT_EQ(book.getLevelQuantity(100, Side::BUY), 0);
@@ -301,7 +302,7 @@ TEST_F(OrderBookTest, Cancel_TailOfList) {
 
     // Match remaining to ensure head is still valid
     Order sell(3, 1, 100, 10, Side::SELL, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(sell, trades);
+    uint32_t remaining = book.processOrder(sell, trades, trades_count);
     ASSERT_EQ(remaining, 0);
 }
 
@@ -322,7 +323,7 @@ TEST_F(OrderBookTest, Cancel_MiddleOfList) {
 
     // Verify Chain: If we match 20, it should consume ID 1 and ID 3
     Order sell(4, 1, 100, 25, Side::SELL, OrderType::LIMIT);
-    uint32_t remaining = book.processOrder(sell, trades);
+    uint32_t remaining = book.processOrder(sell, trades, trades_count);
 
     ASSERT_EQ(remaining, 5); // 25 - 10 - 10 = 5
 }
@@ -356,7 +357,7 @@ TEST_F(OrderBookTest, PartialFillRestingOrder) {
 
     // 2. Send a smaller aggressive Sell order (Qty: 40 @ Price: 1000)
     Order aggressive_sell(2, 1, 1000, 40, Side::SELL, OrderType::LIMIT);
-    uint32_t remaining_sell = book.processOrder(aggressive_sell, trades);
+    uint32_t remaining_sell = book.processOrder(aggressive_sell, trades, trades_count);
 
     // 3. Assertions
     // The aggressive sell should be completely filled (0 remaining)

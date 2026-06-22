@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <x86intrin.h>
 #include <emmintrin.h>
+#include <string.h>
 
 Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, OrderBook& _orderBook, uint64_t numOrders,
     std::atomic<int64_t>& _usd_balance, std::atomic<int64_t>& _equity_balance, double _tsc_ticks_per_ns)
@@ -16,17 +17,20 @@ Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, Or
       equity_balance(_equity_balance),
       tsc_ticks_per_ns(_tsc_ticks_per_ns)
 {
-    core_to_core_latencies.reserve(numOrders);
+    core_to_core_latencies.resize(numOrders);
+    engine_latencies.resize(numOrders);
 }
 
 void Engine::run() {
     pin_thread_to_core(1);
 
-    // Trades vector for multiple trades happening for the same order
-    std::vector<Trade> trades;
-    trades.reserve(256);
+    // Trades array for multiple trades happening for the same order
+    Trade trades[256] = {Trade()};
+    uint8_t trades_count = 0;
+
+    size_t latency_idx = 0;
     // Best-effort drain of ordersBuffer
-    while (running.load(std::memory_order_acquire) || !ordersBuffer.is_empty()) {
+    while (running.load(std::memory_order_relaxed) || !ordersBuffer.is_empty()) {
         // Pop orders from SPSC ring buffer, from gateway to engine
         Order order;
         if (!ordersBuffer.pop(order)) {
@@ -65,19 +69,19 @@ void Engine::run() {
                 }
             }
 
-            trades.clear();
+            trades_count = 0;
 
             if (order.tif == TimeInForce::IOC) {
                 // Just process (match order with book) and dismiss the remainder
-                orderBook.processOrder(order, trades);
+                orderBook.processOrder(order, trades, trades_count);
             } else if (order.tif == TimeInForce::FOK) {
                 // Check if it can be filled entirely and process order
                 if (orderBook.canFill(order)) {
-                    orderBook.processOrder(order, trades);
+                    orderBook.processOrder(order, trades, trades_count);
                 }
             } else {
                 // Process order and add remainder to book
-                uint32_t remaining_qty = orderBook.processOrder(order, trades);
+                uint32_t remaining_qty = orderBook.processOrder(order, trades ,trades_count);
 
                 order.quantity = remaining_qty;
                 if (remaining_qty > 0 && order.type != OrderType::MARKET) {
@@ -85,7 +89,8 @@ void Engine::run() {
                 }
             }
 
-            for (Trade &trade : trades) {
+            for (uint8_t i = 0; i < trades_count; i++) {
+                Trade trade = trades[i];
                 // Calculate balance for trades done by user
                 uint64_t trade_value = trade.price * trade.quantity;
                 if (trade.maker_user_id == 1) {
@@ -113,19 +118,22 @@ void Engine::run() {
             }
 
             unsigned int ui;
-            uint64_t engine_end_ts = __rdtscp(&ui);
+            uint64_t end_ts = __rdtscp(&ui);
 
-            uint64_t core_to_core_end = __rdtscp(&ui);
+            uint64_t cycles_num = end_ts - order.core_to_core_ts;
+            core_to_core_latencies[latency_idx] = cycles_num / tsc_ticks_per_ns;
 
-            uint64_t cycles_num = core_to_core_end - order.core_to_core_ts;
-            core_to_core_latencies.push_back(cycles_num / tsc_ticks_per_ns);
+            cycles_num = end_ts - engine_start_ts;
+            engine_latencies[latency_idx] = cycles_num / tsc_ticks_per_ns;
 
-            cycles_num = engine_end_ts - engine_start_ts;
-            engine_latencies.push_back(cycles_num / tsc_ticks_per_ns);
+            latency_idx++;
         } else {
             continue;
         }
     }
+
+    core_to_core_latencies.resize(latency_idx);
+    engine_latencies.resize(latency_idx);
 }
 
 void Engine::stop() {

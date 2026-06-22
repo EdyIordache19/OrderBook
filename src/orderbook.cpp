@@ -200,7 +200,7 @@ void OrderBook::matchOrders() {
  * @param trades Vector to update when a trade is made, for use in Engine
  * @return uint32_t Remaining quantity of order that got left on the book
  */
-uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
+uint32_t OrderBook::processOrder(Order& incoming, Trade trades[], uint8_t& trades_count) {
     // For market orders adjust the price into an aggressive limit order
     if (incoming.type == OrderType::MARKET) {
         incoming.price = incoming.side == Side::BUY ? MAX_PRICE - 1 : 0;
@@ -208,6 +208,13 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
 
     // Guard to keep the price less than MAX_PRICE
     if (incoming.price >= MAX_PRICE) {
+        return incoming.quantity;
+    }
+
+    // Fast path pre-check if order does not consume any price level and is just resting
+    if (incoming.side == Side::BUY && incoming.price < minAsk) {
+        return incoming.quantity;
+    } else if (incoming.side == Side::SELL && incoming.price > maxBid) {
         return incoming.quantity;
     }
 
@@ -254,18 +261,19 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
         // Build trade semantics
         // TODO: Swap maker with taker: incoming order is taker by convention
         Trade trade(incoming.id, order->id, incoming.user_id, order->user_id, order->price, tradeQuantity);
-        trades.push_back(trade);
+        trades[trades_count++] = trade;
 
         // If we matched a whole order sitting on the book, update the price level
         if (order->quantity == 0) {
             // If filled order is from user, push to history buffer
             if (order->user_id == 1) {
                 uint64_t executed_price = incoming.price;
-                if (incoming.type == OrderType::MARKET && !trades.empty()) {
+                if (incoming.type == OrderType::MARKET && trades_count > 0) {
                     uint64_t total_value = 0;
                     uint64_t total_qty = 0;
 
-                    for (auto& trade : trades) {
+                    for (int i = 0; i < trades_count; i++) {
+                        Trade trade = trades[i];
                         if (trade.maker_id == incoming.id || trade.taker_id == incoming.id) {
                             total_value += trade.price * trade.quantity;
                             total_qty += trade.quantity;
@@ -315,11 +323,12 @@ uint32_t OrderBook::processOrder(Order& incoming, std::vector<Trade>& trades) {
     if (incoming.quantity == 0) {
         if (incoming.user_id == 1) {
             uint64_t executed_price = incoming.price;
-            if (incoming.type == OrderType::MARKET && !trades.empty()) {
+            if (incoming.type == OrderType::MARKET && trades_count > 0) {
                 uint64_t total_value = 0;
                 uint64_t total_qty = 0;
 
-                for (auto& trade : trades) {
+                 for (int i = 0; i < trades_count; i++) {
+                    Trade trade = trades[i];
                     if (trade.maker_id == incoming.id || trade.taker_id == incoming.id) {
                         total_value += trade.price * trade.quantity;
                         total_qty += trade.quantity;

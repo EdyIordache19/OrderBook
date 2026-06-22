@@ -42,7 +42,7 @@ public:
     void removeOrder(uint64_t orderId);
     void removeOrder(Order *orderToRemove);
     void matchOrders();
-    uint32_t processOrder(Order& incoming, std::vector<Trade>& trades);
+    uint32_t processOrder(Order& incoming, Trade trades[], uint8_t& trades_count);
     bool canFill(Order& order);
     void printOrders(std::string filename);
     void printOrder(const Order *order, std::ostream& outFile);
@@ -65,6 +65,9 @@ public:
     }
     std::vector<Order*>& getOrderLookup() {
         return orderLookup;
+    }
+    uint64_t getNumOrders() {
+        return numOrders;
     }
 
     bool isEmpty() {
