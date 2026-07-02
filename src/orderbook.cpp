@@ -246,6 +246,9 @@ uint32_t OrderBook::processOrder(Order& incoming, Trade trades[], uint8_t& trade
 
         Level& level = (incoming.side == Side::BUY) ? askOrders[minAsk] : bidOrders[maxBid];
         Order *order = level.head;
+        if (order && order->next) {
+            __builtin_prefetch(order->next);
+        }
 
         // Guard if level head happens to have empty order
         if (order->quantity == 0) {
