@@ -14,9 +14,9 @@ Engine::Engine(RingBuffer<Order>& _ordersBuffer, std::atomic<bool>& _running, Or
     : orderBook(_orderBook),
       ordersBuffer(_ordersBuffer),
       running(_running),
+      tsc_ticks_per_ns(_tsc_ticks_per_ns),
       usd_balance(_usd_balance),
-      equity_balance(_equity_balance),
-      tsc_ticks_per_ns(_tsc_ticks_per_ns)
+      equity_balance(_equity_balance)
 {
     core_to_core_latencies.resize(numOrders);
     engine_latencies.resize(numOrders);

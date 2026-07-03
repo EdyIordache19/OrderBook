@@ -1,25 +1,28 @@
 cmake_minimum_required(VERSION 3.14)
 project(OrderBook LANGUAGES CXX)
 
-# 1. Standard Settings
-set(CMAKE_CXX_STANDARD 17)
+# 1. Standard Settings - UPGRADED TO C++20
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Enable Interprocedural Optimization (LTO) globally
+include(CheckIPOSupported)
+check_ipo_supported(RESULT lto_supported OUTPUT error)
+if(lto_supported)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 # 2. Optimization Flags (The "Release" build)
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Flags: -O3 for speed, -march=native for CPU instructions, -flto for link-time optimization
 if(MSVC)
     add_compile_options(/O2 /Oi /Ot)
 else()
+    # Added -fno-exceptions and -fno-rtti for HFT compliance
     add_compile_options(-O3 -march=native -Wall -Wextra -pthread)
 endif()
-
-# 3. Handle cxxopts (Header-only library)
-# We assume it is in include/, or we can fetch it automatically (Advanced).
-# For now, just ensuring include/ is in the path works.
 
 # 4. Define the Executable
 add_executable(orderbook
@@ -40,5 +43,4 @@ target_include_directories(orderbook PRIVATE include)
 add_executable(client apps/client.cpp)
 target_include_directories(client PRIVATE include)
 
-# Add tests subdirectory
 add_subdirectory(tests)

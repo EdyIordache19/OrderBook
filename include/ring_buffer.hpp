@@ -18,7 +18,7 @@ private:
     alignas(64) std::atomic<size_t> tail;
     size_t buff_size;
 public:
-    RingBuffer<T>(size_t buff_size) {
+    RingBuffer(size_t buff_size) {
         this->buff_size = buff_size;
         buffer.resize(buff_size);
         tail = 0;
