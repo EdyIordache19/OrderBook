@@ -90,8 +90,9 @@ int main(int argc, char* argv[]) {
     t_publisher.join();
 
     // engine.stop();
-    engine.printStats();
+    engine.saveLatencies();
 
+    engine.printStats();
     // Print current orders
     // orderBook.printOrders(filename);
 

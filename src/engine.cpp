@@ -4,6 +4,7 @@
 #include <atomic>
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <x86intrin.h>
 #include <emmintrin.h>
 #include <string.h>
@@ -169,4 +170,14 @@ void Engine::printStats() {
 
     std::cout << "USD BALANCE: " << usd_balance << '\n';
     std::cout << "EQUITY BALANCE: " << equity_balance << '\n';
+}
+
+void Engine::saveLatencies() {
+    FILE *out = fopen("../docs/latencies.csv", "w");
+    fprintf(out, "order_id, engine_latency, core_to_core_latency\n");
+    for (size_t i = 0; i < engine_latencies.size(); i++) {
+        fprintf(out, "%lu, %lu, %lu \n", i, engine_latencies[i], core_to_core_latencies[i]);
+    }
+
+    fclose(out);
 }

@@ -37,4 +37,5 @@ public:
     void run();
     void stop();
     void printStats();
+    void saveLatencies();
 };
