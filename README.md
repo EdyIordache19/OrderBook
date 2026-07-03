@@ -34,13 +34,15 @@ The platform is decoupled into three distinct layers to ensure the matching hot-
 
 The engine has been aggressively profiled to measure both the isolated matching logic (Engine Latency) and the full journey from order ingress to the publisher thread (Core-to-Core Latency).
 
-### Latency Profiles (1,000,000 Orders)
+*Note: Benchmarks conducted on hardware describred below, using a sample size of 10,000,000 orders. Visualizations represent a chronologically consistent sample of 1,000,000 orders to ensure visual clarity.*
+
+### Latency Profiles (10,000,000 Orders)
 
 | Metric | Engine Latency (Matching Only) | Core-to-Core Latency (End-to-End) |
 | :--- | :--- | :--- |
 | **Median (50th Pct)** | **50 ns** | **170 ns** |
-| **99th Percentile** | 210 ns | 400 ns |
-| **99.9th Percentile** | 1,352 ns | 3,356 ns |
+| **99th Percentile** | 210 ns | 370 ns |
+| **99.9th Percentile** | 430 ns | 1,352 ns |
 
 *Note: Throughput scales to **~10,000,000 ops/sec** when batched, and ~200,000 ops/sec during unbatched, single-order dispatches.*
 
@@ -54,11 +56,10 @@ The engine has been aggressively profiled to measure both the isolated matching 
 *This CDF plot demonstrates the latency budget gap and highlights the flattening of the tail, proving the effectiveness of the lock-free architecture under heavy load.*
 
 ### Hardware & Environment
-*(Fill this out to validate your benchmarks)*
 * **CPU:** AMD Ryzen 5 7535HS 3.30GHz
 * **OS:** Ubuntu 22.04 LTS
-* **Compiler:** GCC 13.3.0 with `-O3 -march=native -pthread`
-* **Tuning:** CPU threads pinned via `isocpus`
+* **Compiler:** GCC 13.3.0 with `-O3 -march=native -Wall -Wextra -pthread`
+* **Tuning:** CPU threads pinned via `isolcpus`
 
 ---
 
